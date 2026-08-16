@@ -167,11 +167,18 @@
                     document.getElementById('unit2').innerText = '';
                 }
 
-                const now = new Date();
-                const hh = now.getHours().toString().padStart(2, '0');
-                const mm = now.getMinutes().toString().padStart(2, '0');
-                const ss = now.getSeconds().toString().padStart(2, '0');
-                document.getElementById('updated').innerText = `最後更新 ${hh}:${mm}:${ss}`;
+                // 直接讀取港鐵官方回傳的香港時間 (curr_time: "YYYY-MM-DD HH:MM:SS")，解決 Kindle 時區偏離問題
+                if (data.curr_time) {
+                    const timeOnly = data.curr_time.split(' ')[1];
+                    document.getElementById('updated').innerText = `最後更新 ${timeOnly}`;
+                } else {
+                    const now = new Date();
+                    const hkDate = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+                    const hh = hkDate.getUTCHours().toString().padStart(2, '0');
+                    const mm = hkDate.getUTCMinutes().toString().padStart(2, '0');
+                    const ss = hkDate.getUTCSeconds().toString().padStart(2, '0');
+                    document.getElementById('updated').innerText = `最後更新 ${hh}:${mm}:${ss}`;
+                }
             } else {
                 document.getElementById('dest1').innerText = '暫無資料';
             }
