@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>康城站列車時間 (Kindle E-Ink)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+        body {
+            background-color: #ffffff;
+            color: #000000;
+            font-family: "PingFang HK", "Helvetica Neue", Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 15px;
+        }
+        .card {
+            border: 4px solid #000000;
+            padding: 24px 20px;
+            background: #ffffff;
+            width: 100%;
+            max-width: 400px;
+        }
+        .station-title {
+            font-size: 1.5rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-align: center;
+            border-bottom: 3px solid #000000;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+        .train-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+        }
+        .train-row:not(:last-of-type) {
+            border-bottom: 2px solid #000000;
+        }
+        .train-info {
+            text-align: left;
+        }
+        .destination {
+            font-weight: 800;
+            line-height: 1.2;
+        }
+        .platform {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-top: 6px;
+        }
+        .time-box {
+            text-align: right;
+            white-space: nowrap;
+        }
+        .time-val {
+            font-weight: 900;
+            line-height: 1;
+        }
+        
+        /* 第一班車：特大極粗黑體 */
+        .first-train .destination {
+            font-size: 1.8rem;
+        }
+        .first-train .time-val {
+            font-size: 3.5rem;
+        }
+
+        /* 第二班車：中等粗體 */
+        .second-train .destination {
+            font-size: 1.4rem;
+        }
+        .second-train .time-val {
+            font-size: 2.4rem;
+        }
+
+        .time-unit {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-left: 2px;
+        }
+        .status {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 20px;
+            text-align: center;
+            border-top: 1px solid #000000;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="station-title">康城 LOHAS PARK</div>
+    
+    <!-- 第一班車 -->
+    <div class="train-row first-train">
+        <div class="train-info">
+            <div id="dest1" class="destination">載入中...</div>
+            <div id="plat1" class="platform">-- 號月台</div>
+        </div>
+        <div class="time-box">
+            <span id="ttnt1" class="time-val">--</span><span id="unit1" class="time-unit">分</span>
+        </div>
+    </div>
+
+    <!-- 第二班車 -->
+    <div class="train-row second-train">
+        <div class="train-info">
+            <div id="dest2" class="destination">--</div>
+            <div id="plat2" class="platform">-- 號月台</div>
+        </div>
+        <div class="time-box">
+            <span id="ttnt2" class="time-val">--</span><span id="unit2" class="time-unit">分</span>
+        </div>
+    </div>
+
+    <div id="updated" class="status">更新中...</div>
+</div>
+
+<script>
+    const destNames = {
+        'NOP': '往 北角',
+        'TIK': '往 調景嶺',
+        'LHP': '康城',
+        'TKO': '將軍澳'
+    };
+
+    async function fetchMTRData() {
+        try {
+            const response = await fetch('https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TKL&sta=LHP');
+            const data = await response.json();
+
+            if (data.status === 1 && data.data['TKL-LHP'] && data.data['TKL-LHP'].DOWN) {
+                const trains = data.data['TKL-LHP'].DOWN;
+
+                if (trains.length > 0) {
+                    updateTrainSlot(trains[0], 1);
+                } else {
+                    document.getElementById('dest1').innerText = '暫無班次';
+                }
+
+                if (trains.length > 1) {
+                    updateTrainSlot(trains[1], 2);
+                } else {
+                    document.getElementById('dest2').innerText = '暫無下班車';
+                    document.getElementById('plat2').innerText = '';
+                    document.getElementById('ttnt2').innerText = '--';
+                    document.getElementById('unit2').innerText = '';
+                }
+
+                const now = new Date();
+                const hh = now.getHours().toString().padStart(2, '0');
+                const mm = now.getMinutes().toString().padStart(2, '0');
+                const ss = now.getSeconds().toString().padStart(2, '0');
+                document.getElementById('updated').innerText = `最後更新 ${hh}:${mm}:${ss}`;
+            } else {
+                document.getElementById('dest1').innerText = '暫無資料';
+            }
+        } catch (error) {
+            document.getElementById('dest1').innerText = '連線失敗';
+        }
+    }
+
+    function updateTrainSlot(train, slotNum) {
+        const destCode = train.dest;
+        const minutes = train.ttnt;
+        const platform = train.plat;
+
+        document.getElementById(`dest${slotNum}`).innerText = destNames[destCode] || `往 ${destCode}`;
+        document.getElementById(`plat${slotNum}`).innerText = `${platform} 號月台`;
+
+        if (minutes === '0') {
+            document.getElementById(`ttnt${slotNum}`).innerText = '即將到站';
+            document.getElementById(`unit${slotNum}`).innerText = '';
+        } else {
+            document.getElementById(`ttnt${slotNum}`).innerText = minutes;
+            document.getElementById(`unit${slotNum}`).innerText = '分';
+        }
+    }
+
+    fetchMTRData();
+    setInterval(fetchMTRData, 30000); // 每 30 秒重新抓取
+</script>
+
+</body>
+</html>
