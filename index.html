@@ -14,6 +14,7 @@
             --accent-color: #38bdf8;
             --highlight-color: #f59e0b;
             --mtr-purple: #8b5cf6;
+            --inbound-color: #34d399;
         }
 
         * {
@@ -141,11 +142,31 @@
             color: var(--text-sub);
         }
 
-        /* 列車班次列表 */
+        /* 方向分組標題 */
+        .direction-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .direction-label.inbound {
+            color: var(--inbound-color);
+        }
+
+        .train-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
         .train-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
         }
 
         /* 第一班車 */
@@ -153,21 +174,26 @@
             background: rgba(56, 189, 248, 0.08);
             border: 1px solid rgba(56, 189, 248, 0.25);
             border-radius: 12px;
-            padding: 16px;
+            padding: 12px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
+        .train-item.first-train.inbound-bg {
+            background: rgba(52, 211, 153, 0.08);
+            border: 1px solid rgba(52, 211, 153, 0.25);
+        }
+
         .train-dest {
-            font-size: 1.15rem;
+            font-size: 1.05rem;
             font-weight: 700;
             color: var(--text-main);
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .train-plat {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-sub);
         }
 
@@ -176,16 +202,24 @@
         }
 
         .first-train .train-time {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 800;
             color: var(--accent-color);
             line-height: 1;
         }
 
+        .first-train.inbound-bg .train-time {
+            color: var(--inbound-color);
+        }
+
         .first-train .train-unit {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--accent-color);
             margin-left: 2px;
+        }
+
+        .first-train.inbound-bg .train-unit {
+            color: var(--inbound-color);
         }
 
         /* 第二班車 */
@@ -193,36 +227,42 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 16px;
+            padding: 8px 16px;
             background: rgba(255, 255, 255, 0.03);
             border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .second-train .train-dest {
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: 600;
-            margin-bottom: 2px;
+            margin-bottom: 0;
         }
 
         .second-train .train-time {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             font-weight: 700;
             color: var(--text-sub);
         }
 
         .second-train .train-unit {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-sub);
+        }
+
+        .divider {
+            height: 1px;
+            background-color: var(--card-border);
+            margin: 4px 0;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- 每日天主聖言 -->
+        <!-- 每日天主聖言 (聖瑪竇福音 英文) -->
         <div class="card scripture-card">
-            <div class="scripture-title">✝️ Daily Scripture</div>
+            <div class="scripture-title">✝️ Daily Gospel (Gospel of Saint Matthew)</div>
             <div id="scripture" class="scripture-content">Loading...</div>
         </div>
 
@@ -247,28 +287,62 @@
                 <div id="updated" class="update-time">最後更新時間 --:--:--</div>
             </div>
 
-            <div class="train-list">
-                <!-- 第一班車 -->
-                <div class="train-item first-train">
-                    <div>
-                        <div id="dest1" class="train-dest">載入中...</div>
-                        <div id="plat1" class="train-plat">-- 號月台</div>
+            <!-- 往市區方向 (離站) -->
+            <div class="train-section">
+                <div class="direction-label">
+                    <span>🚆 往 調景嶺 / 北角 方向</span>
+                </div>
+                <div class="train-list">
+                    <div class="train-item first-train">
+                        <div>
+                            <div id="dest_down1" class="train-dest">載入中...</div>
+                            <div id="plat_down1" class="train-plat">-- 號月台</div>
+                        </div>
+                        <div class="train-time-wrap">
+                            <span id="ttnt_down1" class="train-time">--</span>
+                            <span id="unit_down1" class="train-unit"></span>
+                        </div>
                     </div>
-                    <div class="train-time-wrap">
-                        <span id="ttnt1" class="train-time">--</span>
-                        <span id="unit1" class="train-unit"></span>
+                    <div class="train-item second-train">
+                        <div>
+                            <div id="dest_down2" class="train-dest">載入中...</div>
+                            <div id="plat_down2" class="train-plat">-- 號月台</div>
+                        </div>
+                        <div class="train-time-wrap">
+                            <span id="ttnt_down2" class="train-time">--</span>
+                            <span id="unit_down2" class="train-unit"></span>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- 第二班車 -->
-                <div class="train-item second-train">
-                    <div>
-                        <div id="dest2" class="train-dest">載入中...</div>
-                        <div id="plat2" class="train-plat">-- 號月台</div>
+            <div class="divider"></div>
+
+            <!-- 往康城方向 (抵站) -->
+            <div class="train-section">
+                <div class="direction-label inbound">
+                    <span>🏁 往 康城站 列車 (抵站)</span>
+                </div>
+                <div class="train-list">
+                    <div class="train-item first-train inbound-bg">
+                        <div>
+                            <div id="dest_up1" class="train-dest">載入中...</div>
+                            <div id="plat_up1" class="train-plat">-- 號月台</div>
+                        </div>
+                        <div class="train-time-wrap">
+                            <span id="ttnt_up1" class="train-time">--</span>
+                            <span id="unit_up1" class="train-unit"></span>
+                        </div>
                     </div>
-                    <div class="train-time-wrap">
-                        <span id="ttnt2" class="train-time">--</span>
-                        <span id="unit2" class="train-unit"></span>
+                    <div class="train-item second-train">
+                        <div>
+                            <div id="dest_up2" class="train-dest">載入中...</div>
+                            <div id="plat_up2" class="train-plat">-- 號月台</div>
+                        </div>
+                        <div class="train-time-wrap">
+                            <span id="ttnt_up2" class="train-time">--</span>
+                            <span id="unit_up2" class="train-unit"></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -277,44 +351,46 @@
 
     <script>
         // 全局倒數控制變數
-        let firstTrainTargetTime = null;
+        let firstDownTargetTime = null;
+        let firstUpTargetTime = null;
+        let isFirstDownArriving = false;
+        let isFirstUpArriving = false;
         let timeOffset = 0; // 校正裝置與港鐵伺服器時間差
-        let isFirstTrainArriving = false;
         let fetchIntervalId = null; // 用來管理 10 秒刷新的計時器
 
-        // 英文原版天主教 31 句聖言（NRSVCE / RSVCE 譯本）
+        // 31 句全數出自《聖瑪竇福音》的英文金句 (Gospel of Saint Matthew)
         const catholicScriptures = [
-            "Come to me, all you that are weary and are carrying heavy burdens, and I will give you rest. (Matthew 11:28)",
-            "Peace I leave with you; my peace I give to you. I do not give to you as the world gives. (John 14:27)",
-            "The Lord is my shepherd, I shall not want. (Psalm 23:1)",
-            "Love is patient; love is kind; love is not envious or boastful or arrogant or rude. (1 Corinthians 13:4)",
-            "Rejoice always, pray without ceasing, give thanks in all circumstances. (1 Thessalonians 5:16-18)",
-            "The Lord is my light and my salvation; whom shall I fear? (Psalm 27:1)",
-            "Your word is a lamp to my feet and a light to my path. (Psalm 119:105)",
+            "She will bear a son, and you are to name him Jesus, for he will save his people from their sins. (Matthew 1:21)",
+            "On entering the house, they saw the child with Mary his mother; and they knelt down and paid him homage. (Matthew 2:11)",
+            "And a voice from heaven said, 'This is my Son, the Beloved, with whom I am well pleased.' (Matthew 3:17)",
+            "Jesus said to him, 'Again it is written, Do not put the Lord your God to the test.' (Matthew 4:7)",
+            "Blessed are the poor in spirit, for theirs is the kingdom of heaven. (Matthew 5:3)",
+            "Blessed are the meek, for they will inherit the earth. (Matthew 5:5)",
+            "Blessed are the peacemakers, for they will be called children of God. (Matthew 5:9)",
+            "You are the light of the world. A city built on a hill cannot be hid. (Matthew 5:14)",
+            "Let your light shine before others, so that they may see your good works and give glory to your Father in heaven. (Matthew 5:16)",
+            "Pray then in this way: Our Father in heaven, hallowed be your name. (Matthew 6:9)",
+            "But strive first for the kingdom of God and his righteousness, and all these things will be given to you as well. (Matthew 6:33)",
+            "So do not worry about tomorrow, for tomorrow will bring its own worries. Today's trouble is enough for today. (Matthew 6:34)",
             "Ask, and it will be given you; search, and you will find; knock, and the door will be opened for you. (Matthew 7:7)",
-            "And remember, I am with you always, to the end of the age. (Matthew 28:20)",
-            "The Lord is near to the brokenhearted, and saves the crushed in spirit. (Psalm 34:18)",
-            "Trust in the Lord with all your heart, and do not rely on your own insight. (Proverbs 3:5)",
-            "Blessed are the pure in heart, for they will see God. (Matthew 5:8)",
-            "This is my commandment, that you love one another as I have loved you. (John 15:12)",
-            "God is our refuge and strength, a very present help in trouble. (Psalm 46:1)",
-            "For God so loved the world that he gave his only Son, so that everyone who believes in him may not perish. (John 3:16)",
-            "The Lord bless you and keep you; the Lord make his face to shine upon you, and give you peace. (Numbers 6:24-26)",
-            "Be kind to one another, tenderhearted, forgiving one another, as God in Christ has forgiven you. (Ephesians 4:32)",
-            "The Lord is my rock, my fortress, and my deliverer, my God, my rock in whom I take refuge. (Psalm 18:2)",
-            "Take delight in the Lord, and he will give you the desires of your heart. (Psalm 37:4)",
-            "God opposes the proud, but gives grace to the humble. (1 Peter 5:5)",
-            "See, the Lord's hand is not too short to save, nor his ear too dull to hear. (Isaiah 59:1)",
-            "May the God of hope fill you with all joy and peace in believing, so that you may abound in hope. (Romans 15:13)",
-            "We know that all things work together for good for those who love God. (Romans 8:28)",
-            "Be strong and courageous; do not be frightened or dismayed, for the Lord your God is with you wherever you go. (Joshua 1:9)",
-            "The Spirit of the Lord is upon me, because he has anointed me to bring good news to the poor. (Luke 4:18)",
-            "Whatever your task, put your whole heart into it, as done for the Lord and not for your masters. (Colossians 3:23)",
-            "The fear of the Lord is the beginning of wisdom; all those who practice it have a good understanding. (Psalm 111:10)",
-            "The Lord is my strength and my shield; in him my heart trusts, and I am helped. (Psalm 28:7)",
-            "Listen! I am standing at the door, knocking; if you hear my voice and open the door, I will come in to you. (Revelation 3:20)",
-            "Rejoice in the Lord always; again I will say, Rejoice. (Philippians 4:4)",
-            "The Lord will keep your going out and your coming in from this time on and forevermore. (Psalm 121:8)"
+            "In everything do to others as you would have them do to you; for this is the law and the prophets. (Matthew 7:12)",
+            "Everyone then who hears these words of mine and acts on them will be like a wise man who built his house on rock. (Matthew 7:24)",
+            "When Jesus heard this, he was amazed and said, 'Truly I tell you, in no one in Israel have I found such faith.' (Matthew 8:10)",
+            "Go and learn what this means, 'I desire mercy, not sacrifice.' For I have come to call not the righteous, but sinners. (Matthew 9:13)",
+            "Then he said to his disciples, 'The harvest is plentiful, but the laborers are few.' (Matthew 9:37)",
+            "So do not be afraid; you are of more value than many sparrows. (Matthew 10:31)",
+            "Come to me, all you that are weary and are carrying heavy burdens, and I will give you rest. (Matthew 11:28)",
+            "Take my yoke upon you, and learn from me; for I am gentle and humble in heart, and you will find rest for your souls. (Matthew 11:29)",
+            "For where two or three are gathered in my name, I am there among them. (Matthew 18:20)",
+            "Jesus said, 'Let the little children come to me, and do not stop them; for it is to such as these that the kingdom of heaven belongs.' (Matthew 19:14)",
+            "For many are called, but few are chosen. (Matthew 22:14)",
+            "You shall love the Lord your God with all your heart, and with all your soul, and with all your mind. (Matthew 22:37)",
+            "You shall love your neighbor as yourself. (Matthew 22:39)",
+            "Truly I tell you, just as you did it to one of the least of these who are members of my family, you did it to me. (Matthew 25:40)",
+            "And while they were eating, Jesus took bread, and blessed and broke it, and gave it to the disciples and said, 'Take, eat; this is my body.' (Matthew 26:26)",
+            "Watch and pray that you may not enter into temptation; the spirit indeed is willing, but the flesh is weak. (Matthew 26:41)",
+            "And Jesus came and said to them, 'All authority in heaven and on earth has been given to me.' (Matthew 28:18)",
+            "And remember, I am with you always, to the end of the age. (Matthew 28:20)"
         ];
 
         // 天氣圖示對應邏輯
@@ -329,7 +405,7 @@
             return iconMap[iconCode] || "🌤️";
         }
 
-        // 載入當天金句 (依日期自動切換 1-31)
+        // 載入當天聖瑪竇福音金句 (依日期自動切換 1-31)
         function loadTodayCatholicVerse() {
             const today = new Date().getDate();
             const verseIndex = (today - 1) % catholicScriptures.length;
@@ -375,106 +451,164 @@
             'TKO': '將軍澳'
         };
 
-        function tickFirstTrainCountdown() {
-            if (isFirstTrainArriving || !firstTrainTargetTime) return;
+        // 通用倒數顯示邏輯
+        function updateCountdownUI(targetTime, isArriving, ttntElemId, unitElemId) {
+            if (isArriving) {
+                document.getElementById(ttntElemId).innerText = '即將到站';
+                document.getElementById(unitElemId).innerText = '';
+                return;
+            }
+            if (!targetTime) return;
 
-            // 計算現在時間，已經包含咗伺服器時間差同網絡延遲補償
             const now = Date.now() + timeOffset;
-            const diffSec = Math.floor((firstTrainTargetTime - now) / 1000);
+            const diffSec = Math.floor((targetTime - now) / 1000);
 
             if (diffSec <= 0) {
-                document.getElementById('ttnt1').innerText = '即將到站';
-                document.getElementById('unit1').innerText = '';
-                isFirstTrainArriving = true;
+                document.getElementById(ttntElemId).innerText = '即將到站';
+                document.getElementById(unitElemId).innerText = '';
             } else if (diffSec <= 120) {
                 const mins = Math.floor(diffSec / 60);
                 const secs = diffSec % 60;
                 const formattedSecs = secs < 10 ? `0${secs}` : secs;
-                document.getElementById('ttnt1').innerText = `${mins}:${formattedSecs}`;
-                document.getElementById('unit1').innerText = '';
+                document.getElementById(ttntElemId).innerText = `${mins}:${formattedSecs}`;
+                document.getElementById(unitElemId).innerText = '';
             } else {
                 const mins = Math.ceil(diffSec / 60);
-                document.getElementById('ttnt1').innerText = mins;
-                document.getElementById('unit1').innerText = '分';
+                document.getElementById(ttntElemId).innerText = mins;
+                document.getElementById(unitElemId).innerText = '分';
+            }
+        }
+
+        function tickFirstTrainCountdown() {
+            if (firstDownTargetTime && !isFirstDownArriving) {
+                updateCountdownUI(firstDownTargetTime, isFirstDownArriving, 'ttnt_down1', 'unit_down1');
+            }
+            if (firstUpTargetTime && !isFirstUpArriving) {
+                updateCountdownUI(firstUpTargetTime, isFirstUpArriving, 'ttnt_up1', 'unit_up1');
             }
         }
 
         async function fetchMTRData() {
             try {
-                // 紀錄開始 Fetch 嘅時間
                 const requestStartTime = Date.now();
                 
                 const response = await fetch('https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TKL&sta=LHP');
                 const data = await response.json();
                 
-                // 紀錄收到數據嘅時間，計算網絡延遲 (RTT)
                 const requestEndTime = Date.now();
                 const rtt = requestEndTime - requestStartTime;
 
                 if (data.curr_time) {
-                    // 強制加上香港時區 +0800
                     const serverTimeStr = data.curr_time.replace(/-/g, '/') + ' +0800';
                     const serverMs = new Date(serverTimeStr).getTime();
                     
-                    // 【終極精準補償】：伺服器時間 + (網絡延遲 / 2) - 裝置當前時間
                     timeOffset = (serverMs + (rtt / 2)) - Date.now();
                     
                     const timeOnly = data.curr_time.split(' ')[1];
                     document.getElementById('updated').innerText = `最後更新時間 ${timeOnly}`;
                 }
 
-                if (data.status === 1 && data.data['TKL-LHP'] && data.data['TKL-LHP'].DOWN) {
-                    const trains = data.data['TKL-LHP'].DOWN;
+                if (data.status === 1 && data.data['TKL-LHP']) {
+                    const mtrData = data.data['TKL-LHP'];
 
-                    if (trains.length > 0) {
-                        const firstTrain = trains[0];
-                        document.getElementById('dest1').innerText = destNames[firstTrain.dest] || `往 ${firstTrain.dest}`;
-                        document.getElementById('plat1').innerText = `${firstTrain.plat} 號月台`;
+                    // --- 1. 處理往市區方向列車 (DOWN) ---
+                    if (mtrData.DOWN && mtrData.DOWN.length > 0) {
+                        const downTrains = mtrData.DOWN;
 
-                        if (firstTrain.ttnt === '0' || firstTrain.ttnt === '') {
-                            firstTrainTargetTime = null;
-                            isFirstTrainArriving = true;
-                            document.getElementById('ttnt1').innerText = '即將到站';
-                            document.getElementById('unit1').innerText = '';
-                        } else if (firstTrain.time) {
-                            isFirstTrainArriving = false;
-                            const targetTimeStr = firstTrain.time.replace(/-/g, '/') + ' +0800';
-                            firstTrainTargetTime = new Date(targetTimeStr).getTime();
-                            tickFirstTrainCountdown(); 
+                        // 第一班車
+                        const firstDown = downTrains[0];
+                        document.getElementById('dest_down1').innerText = destNames[firstDown.dest] || `往 ${firstDown.dest}`;
+                        document.getElementById('plat_down1').innerText = `${firstDown.plat} 號月台`;
+
+                        if (firstDown.ttnt === '0' || firstDown.ttnt === '') {
+                            firstDownTargetTime = null;
+                            isFirstDownArriving = true;
+                            document.getElementById('ttnt_down1').innerText = '即將到站';
+                            document.getElementById('unit_down1').innerText = '';
+                        } else if (firstDown.time) {
+                            isFirstDownArriving = false;
+                            const targetTimeStr = firstDown.time.replace(/-/g, '/') + ' +0800';
+                            firstDownTargetTime = new Date(targetTimeStr).getTime();
+                            updateCountdownUI(firstDownTargetTime, false, 'ttnt_down1', 'unit_down1');
                         }
-                    } else {
-                        firstTrainTargetTime = null;
-                        isFirstTrainArriving = false;
-                        document.getElementById('dest1').innerText = '暫無班次';
-                        document.getElementById('ttnt1').innerText = '--';
-                        document.getElementById('unit1').innerText = '';
-                    }
 
-                    if (trains.length > 1) {
-                        const secondTrain = trains[1];
-                        document.getElementById('dest2').innerText = destNames[secondTrain.dest] || `往 ${secondTrain.dest}`;
-                        document.getElementById('plat2').innerText = `${secondTrain.plat} 號月台`;
-                        
-                        if (secondTrain.ttnt === '0') {
-                            document.getElementById('ttnt2').innerText = '即將到站';
-                            document.getElementById('unit2').innerText = '';
+                        // 第二班車
+                        if (downTrains.length > 1) {
+                            const secondDown = downTrains[1];
+                            document.getElementById('dest_down2').innerText = destNames[secondDown.dest] || `往 ${secondDown.dest}`;
+                            document.getElementById('plat_down2').innerText = `${secondDown.plat} 號月台`;
+                            
+                            if (secondDown.ttnt === '0') {
+                                document.getElementById('ttnt_down2').innerText = '即將到站';
+                                document.getElementById('unit_down2').innerText = '';
+                            } else {
+                                document.getElementById('ttnt_down2').innerText = secondDown.ttnt;
+                                document.getElementById('unit_down2').innerText = '分';
+                            }
                         } else {
-                            document.getElementById('ttnt2').innerText = secondTrain.ttnt;
-                            document.getElementById('unit2').innerText = '分';
+                            document.getElementById('dest_down2').innerText = '暫無下班車';
+                            document.getElementById('plat_down2').innerText = '';
+                            document.getElementById('ttnt_down2').innerText = '--';
+                            document.getElementById('unit_down2').innerText = '';
                         }
                     } else {
-                        document.getElementById('dest2').innerText = '暫無下班車';
-                        document.getElementById('plat2').innerText = '';
-                        document.getElementById('ttnt2').innerText = '--';
-                        document.getElementById('unit2').innerText = '';
+                        document.getElementById('dest_down1').innerText = '暫無班次';
+                        document.getElementById('ttnt_down1').innerText = '--';
+                        document.getElementById('unit_down1').innerText = '';
                     }
+
+                    // --- 2. 處理往康城方向列車 (UP) ---
+                    if (mtrData.UP && mtrData.UP.length > 0) {
+                        const upTrains = mtrData.UP;
+
+                        // 第一班車
+                        const firstUp = upTrains[0];
+                        document.getElementById('dest_up1').innerText = destNames[firstUp.dest] || `往 康城`;
+                        document.getElementById('plat_up1').innerText = `${firstUp.plat} 號月台`;
+
+                        if (firstUp.ttnt === '0' || firstUp.ttnt === '') {
+                            firstUpTargetTime = null;
+                            isFirstUpArriving = true;
+                            document.getElementById('ttnt_up1').innerText = '即將到站';
+                            document.getElementById('unit_up1').innerText = '';
+                        } else if (firstUp.time) {
+                            isFirstUpArriving = false;
+                            const targetTimeStr = firstUp.time.replace(/-/g, '/') + ' +0800';
+                            firstUpTargetTime = new Date(targetTimeStr).getTime();
+                            updateCountdownUI(firstUpTargetTime, false, 'ttnt_up1', 'unit_up1');
+                        }
+
+                        // 第二班車
+                        if (upTrains.length > 1) {
+                            const secondUp = upTrains[1];
+                            document.getElementById('dest_up2').innerText = destNames[secondUp.dest] || `往 康城`;
+                            document.getElementById('plat_up2').innerText = `${secondUp.plat} 號月台`;
+                            
+                            if (secondUp.ttnt === '0') {
+                                document.getElementById('ttnt_up2').innerText = '即將到站';
+                                document.getElementById('unit_up2').innerText = '';
+                            } else {
+                                document.getElementById('ttnt_up2').innerText = secondUp.ttnt;
+                                document.getElementById('unit_up2').innerText = '分';
+                            }
+                        } else {
+                            document.getElementById('dest_up2').innerText = '暫無下班車';
+                            document.getElementById('plat_up2').innerText = '';
+                            document.getElementById('ttnt_up2').innerText = '--';
+                            document.getElementById('unit_up2').innerText = '';
+                        }
+                    } else {
+                        document.getElementById('dest_up1').innerText = '暫無抵站列車';
+                        document.getElementById('ttnt_up1').innerText = '--';
+                        document.getElementById('unit_up1').innerText = '';
+                    }
+
                 } else {
-                    document.getElementById('dest1').innerText = '暫無列車資料';
-                    firstTrainTargetTime = null;
+                    document.getElementById('dest_down1').innerText = '暫無列車資料';
+                    document.getElementById('dest_up1').innerText = '暫無列車資料';
                 }
             } catch (error) {
                 console.error(error);
-                // 不顯示連線失敗蓋過畫面，只在背景重試，保持使用者體驗流暢
             }
         }
 
@@ -488,7 +622,6 @@
         // 監聽網頁可見度 (解決鎖屏/轉App導致的時間停頓)
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === "visible") {
-                // 一轉返入網頁，立即重新計時並刷新數據，畫面唔會卡住喺舊時間
                 startIntervals();
             }
         });
@@ -496,11 +629,11 @@
         // 初始化執行
         loadTodayCatholicVerse();
         fetchHKOWeather();
-        startIntervals(); // 呼叫港鐵 API
+        startIntervals();
 
-        // 每秒本地倒數 (唔會受伺服器限制，維持 UI 流暢度)
+        // 每秒本地倒數
         setInterval(tickFirstTrainCountdown, 1000);
-        // 天氣可以維持 5 分鐘刷新
+        // 天氣維持 5 分鐘刷新
         setInterval(fetchHKOWeather, 300000);
     </script>
 </body>
