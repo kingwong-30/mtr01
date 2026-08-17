@@ -279,7 +279,8 @@
         // 全局倒數控制變數
         let firstTrainTargetTime = null;
         let timeOffset = 0; // 校正裝置與港鐵伺服器時間差
-        let isFirstTrainArriving = false; // 標記是否已經處於「即將到站」狀態
+        let isFirstTrainArriving = false;
+        let fetchIntervalId = null; // 用來管理 10 秒刷新的計時器
 
         // 英文原版天主教 31 句聖言（NRSVCE / RSVCE 譯本）
         const catholicScriptures = [
@@ -374,10 +375,10 @@
             'TKO': '將軍澳'
         };
 
-        // 每秒為第一班車進行精準倒數
         function tickFirstTrainCountdown() {
             if (isFirstTrainArriving || !firstTrainTargetTime) return;
 
+            // 計算現在時間，已經包含咗伺服器時間差同網絡延遲補償
             const now = Date.now() + timeOffset;
             const diffSec = Math.floor((firstTrainTargetTime - now) / 1000);
 
@@ -398,16 +399,25 @@
             }
         }
 
-        // 抓取港鐵康城站 API (每 10 秒刷新數據)
         async function fetchMTRData() {
             try {
+                // 紀錄開始 Fetch 嘅時間
+                const requestStartTime = Date.now();
+                
                 const response = await fetch('https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TKL&sta=LHP');
                 const data = await response.json();
+                
+                // 紀錄收到數據嘅時間，計算網絡延遲 (RTT)
+                const requestEndTime = Date.now();
+                const rtt = requestEndTime - requestStartTime;
 
                 if (data.curr_time) {
+                    // 強制加上香港時區 +0800
                     const serverTimeStr = data.curr_time.replace(/-/g, '/') + ' +0800';
                     const serverMs = new Date(serverTimeStr).getTime();
-                    timeOffset = serverMs - Date.now();
+                    
+                    // 【終極精準補償】：伺服器時間 + (網絡延遲 / 2) - 裝置當前時間
+                    timeOffset = (serverMs + (rtt / 2)) - Date.now();
                     
                     const timeOnly = data.curr_time.split(' ')[1];
                     document.getElementById('updated').innerText = `最後更新時間 ${timeOnly}`;
@@ -416,7 +426,6 @@
                 if (data.status === 1 && data.data['TKL-LHP'] && data.data['TKL-LHP'].DOWN) {
                     const trains = data.data['TKL-LHP'].DOWN;
 
-                    // 第一班車處理
                     if (trains.length > 0) {
                         const firstTrain = trains[0];
                         document.getElementById('dest1').innerText = destNames[firstTrain.dest] || `往 ${firstTrain.dest}`;
@@ -431,7 +440,7 @@
                             isFirstTrainArriving = false;
                             const targetTimeStr = firstTrain.time.replace(/-/g, '/') + ' +0800';
                             firstTrainTargetTime = new Date(targetTimeStr).getTime();
-                            tickFirstTrainCountdown();
+                            tickFirstTrainCountdown(); 
                         }
                     } else {
                         firstTrainTargetTime = null;
@@ -441,7 +450,6 @@
                         document.getElementById('unit1').innerText = '';
                     }
 
-                    // 第二班車處理
                     if (trains.length > 1) {
                         const secondTrain = trains[1];
                         document.getElementById('dest2').innerText = destNames[secondTrain.dest] || `往 ${secondTrain.dest}`;
@@ -466,19 +474,34 @@
                 }
             } catch (error) {
                 console.error(error);
-                document.getElementById('dest1').innerText = '網絡連線失敗';
+                // 不顯示連線失敗蓋過畫面，只在背景重試，保持使用者體驗流暢
             }
         }
+
+        // 啟動與重置計時器的封裝函數
+        function startIntervals() {
+            if (fetchIntervalId) clearInterval(fetchIntervalId);
+            fetchMTRData(); // 立即攞一次
+            fetchIntervalId = setInterval(fetchMTRData, 10000); // 之後每 10 秒攞一次
+        }
+
+        // 監聽網頁可見度 (解決鎖屏/轉App導致的時間停頓)
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") {
+                // 一轉返入網頁，立即重新計時並刷新數據，畫面唔會卡住喺舊時間
+                startIntervals();
+            }
+        });
 
         // 初始化執行
         loadTodayCatholicVerse();
         fetchHKOWeather();
-        fetchMTRData();
+        startIntervals(); // 呼叫港鐵 API
 
-        // 計時器設定
-        setInterval(tickFirstTrainCountdown, 1000); // 每秒倒數
-        setInterval(fetchMTRData, 10000);           // 10 秒刷新港鐵數據
-        setInterval(fetchHKOWeather, 300000);       // 5 分鐘刷新天氣資料
+        // 每秒本地倒數 (唔會受伺服器限制，維持 UI 流暢度)
+        setInterval(tickFirstTrainCountdown, 1000);
+        // 天氣可以維持 5 分鐘刷新
+        setInterval(fetchHKOWeather, 300000);
     </script>
 </body>
 </html>
