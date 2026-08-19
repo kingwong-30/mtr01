@@ -192,7 +192,6 @@
             gap: 8px;
         }
 
-        /* 列車項目共用 */
         .train-dest {
             font-size: 1.05rem;
             font-weight: 700;
@@ -200,7 +199,6 @@
             margin-bottom: 4px;
         }
 
-        /* UI 升級：月台標籤化 */
         .train-plat {
             display: inline-block;
             background: rgba(255, 255, 255, 0.1);
@@ -215,7 +213,6 @@
             text-align: right;
         }
 
-        /* 實際預估時間顯示 */
         .exact-time {
             display: block;
             font-size: 0.75rem;
@@ -224,7 +221,6 @@
             font-weight: 500;
         }
 
-        /* 即將到站動畫 */
         @keyframes pulse {
             0% { opacity: 1; }
             50% { opacity: 0.6; color: var(--error-color); }
@@ -238,7 +234,6 @@
             font-weight: 800;
         }
 
-        /* 第一班車 */
         .train-item.first-train {
             background: rgba(56, 189, 248, 0.08);
             border: 1px solid rgba(56, 189, 248, 0.25);
@@ -270,11 +265,11 @@
             color: var(--accent-color);
             margin-left: 2px;
         }
+
         .first-train.inbound-bg .train-unit {
             color: var(--inbound-color);
         }
 
-        /* 第二班車 */
         .train-item.second-train {
             display: flex;
             justify-content: space-between;
@@ -409,7 +404,7 @@
     </div>
 
     <script>
-        // --- 效能優化 1：快取 DOM 元素，避免反覆呼叫 getElementById ---
+        // 快取 DOM 元素
         const dom = {};
         
         function cacheDOM() {
@@ -433,7 +428,7 @@
         let isFirstUpArriving = false;
         let timeOffset = 0; 
         
-        // --- 效能優化 2：簡化各站預計行車時間配置 (秒) ---
+        // 簡化各站預計行車時間配置 (秒)
         const stationJourneySeconds = {
             'LHP': 0,      // 本站
             'TKO': 210,    // 將軍澳 3.5m
@@ -445,7 +440,15 @@
         const destNames = { 'NOP': '往 北角', 'TIK': '往 調景嶺', 'LHP': '往 康城', 'TKO': '往 將軍澳' };
         const matthewPassages = [ "1:21", "2:11", "3:17", "5:3-12", "6:9-13", "7:7-8", "11:28-30", "16:24", "28:18-20" ];
 
-        // 工具函數：格式化 HH:mm
+        // 工具函數：標準化解析港鐵時間字串 (相容 iOS Safari 及主流瀏覽器)
+        function parseMTRTime(timeStr) {
+            if (!timeStr) return null;
+            // 將 "YYYY-MM-DD HH:mm:ss" 轉為 "YYYY-MM-DDTHH:mm:ss+08:00" ISO 8601 格式
+            const isoStr = timeStr.trim().replace(' ', 'T') + '+08:00';
+            const timestamp = new Date(isoStr).getTime();
+            return isNaN(timestamp) ? null : timestamp;
+        }
+
         function formatExactTime(ms) {
             if (!ms) return '';
             const d = new Date(ms);
@@ -542,12 +545,14 @@
                     stations.map(sta => fetch(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TKL&sta=${sta}`).then(r => r.json()).catch(() => null))
                 );
                 
-                dom['network-status'].innerText = ''; // 清除連線錯誤訊息
+                dom['network-status'].innerText = '';
                 const rtt = Date.now() - requestStartTime;
 
                 const resLHP = responses[0];
-                if (resLHP && resLHP.curr_time) {
-                    timeOffset = (new Date(resLHP.curr_time.replace(/-/g, '/') + ' +0800').getTime() + (rtt / 2)) - Date.now();
+                const currTimeMs = resLHP?.curr_time ? parseMTRTime(resLHP.curr_time) : null;
+
+                if (currTimeMs) {
+                    timeOffset = (currTimeMs + (rtt / 2)) - Date.now();
                     dom['updated'].innerText = `最後更新 ${resLHP.curr_time.split(' ')[1].substring(0,5)}`;
                 } else {
                     dom['updated'].innerText = `最後更新 ${getFormattedCurrentTime()}`;
@@ -566,14 +571,14 @@
                         firstDownTargetTime = null;
                     } else {
                         isFirstDownArriving = false;
-                        firstDownTargetTime = new Date(downTrains[0].time.replace(/-/g, '/') + ' +0800').getTime();
+                        firstDownTargetTime = parseMTRTime(downTrains[0].time);
                     }
 
                     // 車次 2
                     if (downTrains.length > 1) {
                         dom['dest_down2'].innerText = destNames[downTrains[1].dest] || `往 ${downTrains[1].dest}`;
                         dom['plat_down2'].innerText = `${downTrains[1].plat} 月台`;
-                        const t2Time = new Date(downTrains[1].time.replace(/-/g, '/') + ' +0800').getTime();
+                        const t2Time = parseMTRTime(downTrains[1].time);
                         updateCountdownUI(t2Time, downTrains[1].ttnt === '0', 'ttnt_down2', 'unit_down2', 'exact_down2');
                     } else {
                         setEmptyState('down', 2, '暫無下班車');
@@ -589,22 +594,22 @@
                 let rawUpCandidates = [];
                 const nowMs = Date.now() + timeOffset;
 
-                // 效能優化 3：用迴圈取代重複的 IF-ELSE
                 stations.forEach((sta, idx) => {
                     const res = responses[idx];
                     const staData = res?.data?.[`TKL-${sta}`]?.UP;
                     
                     if (staData) {
                         staData.forEach(t => {
-                            // 康城站本身，或者其他站開往康城(LHP)的車次
                             if (sta === 'LHP' || t.dest === 'LHP') {
                                 if (t.time) {
-                                    const baseTime = new Date(t.time.replace(/-/g, '/') + ' +0800').getTime();
-                                    rawUpCandidates.push({
-                                        plat: sta === 'LHP' ? (t.plat || '1') : '1',
-                                        targetTime: baseTime + (stationJourneySeconds[sta] * 1000),
-                                        isArriving: (sta === 'LHP' && t.ttnt === '0')
-                                    });
+                                    const baseTime = parseMTRTime(t.time);
+                                    if (baseTime) {
+                                        rawUpCandidates.push({
+                                            plat: sta === 'LHP' ? (t.plat || '1') : '1',
+                                            targetTime: baseTime + (stationJourneySeconds[sta] * 1000),
+                                            isArriving: (sta === 'LHP' && t.ttnt === '0')
+                                        });
+                                    }
                                 } else if (sta === 'LHP' && t.ttnt === '0') {
                                     rawUpCandidates.push({ plat: t.plat || '1', targetTime: nowMs, isArriving: true });
                                 }
@@ -644,7 +649,7 @@
                     firstUpTargetTime = null;
                 }
                 
-                // 強制更新一次 UI
+                // 強制更新 UI
                 tickFirstTrainCountdown();
 
             } catch (error) {
@@ -664,7 +669,7 @@
             // 每 1 秒刷新本機前端倒數
             setInterval(tickFirstTrainCountdown, 1000);
 
-            // 效能優化 4：放寬 API 請求頻率，從 12 秒改為 25 秒，避免被港鐵封鎖
+            // 每 25 秒重新抓取資料，避免 API rate limit
             setInterval(fetchMTRData, 25000);
 
             // 每 10 分鐘更新天氣
