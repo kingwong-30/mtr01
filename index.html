@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>康城站即時列車及資訊儀表板</title>
+    <title>康城及將軍澳綫即時列車及資訊儀表板</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -133,7 +133,7 @@
         }
 
         .station-title {
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             font-weight: 700;
             color: var(--text-main);
             display: flex;
@@ -164,7 +164,7 @@
             font-weight: bold;
         }
 
-        /* 方向分組標題 */
+        /* 方向標題與切換按鈕 */
         .direction-label {
             font-size: 0.85rem;
             font-weight: 700;
@@ -178,6 +178,28 @@
 
         .direction-label.inbound {
             color: var(--inbound-color);
+        }
+
+        .toggle-btn {
+            background-color: rgba(56, 189, 248, 0.12);
+            color: var(--accent-color);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .toggle-btn:hover {
+            background-color: rgba(56, 189, 248, 0.25);
+            border-color: rgba(56, 189, 248, 0.5);
+        }
+
+        .toggle-btn:active {
+            transform: scale(0.96);
         }
 
         .train-section {
@@ -296,12 +318,6 @@
             font-size: 0.8rem;
             color: var(--text-sub);
         }
-
-        .divider {
-            height: 1px;
-            background-color: var(--card-border);
-            margin: 4px 0;
-        }
     </style>
 </head>
 <body>
@@ -329,73 +345,83 @@
             </div>
         </div>
 
-        <!-- 康城站列車資訊 -->
+        <!-- 卡片 1: 由康城站往調景嶺/市區 -->
         <div class="card mtr-card">
             <div class="mtr-header">
                 <div class="station-title">
                     康城站 <span class="station-badge">將軍澳綫</span>
                 </div>
                 <div class="update-time">
-                    <span id="network-status"></span>
-                    <span id="updated">最後更新 --:--</span>
+                    <span id="network-status-c1"></span>
+                    <span id="updated-c1">最後更新 --:--</span>
                 </div>
             </div>
 
-            <!-- 往市區方向 (離站) -->
             <div class="train-section">
                 <div class="direction-label">
-                    <span>🚆 往 調景嶺 / 北角 方向</span>
+                    <span>🚆 由 康城站 往 調景嶺 / 北角</span>
                 </div>
                 <div class="train-list">
                     <div class="train-item first-train">
                         <div>
-                            <div id="dest_down1" class="train-dest">載入中...</div>
-                            <div id="plat_down1" class="train-plat">-- 月台</div>
+                            <div id="dest_c1_1" class="train-dest">載入中...</div>
+                            <div id="plat_c1_1" class="train-plat">-- 月台</div>
                         </div>
                         <div class="train-time-wrap">
-                            <span id="ttnt_down1" class="train-time">--</span><span id="unit_down1" class="train-unit"></span>
-                            <span id="exact_down1" class="exact-time"></span>
+                            <span id="ttnt_c1_1" class="train-time">--</span><span id="unit_c1_1" class="train-unit"></span>
+                            <span id="exact_c1_1" class="exact-time"></span>
                         </div>
                     </div>
                     <div class="train-item second-train">
                         <div>
-                            <div id="dest_down2" class="train-dest">載入中...</div>
-                            <div id="plat_down2" class="train-plat">-- 月台</div>
+                            <div id="dest_c1_2" class="train-dest">載入中...</div>
+                            <div id="plat_c1_2" class="train-plat">-- 月台</div>
                         </div>
                         <div class="train-time-wrap">
-                            <span id="ttnt_down2" class="train-time">--</span><span id="unit_down2" class="train-unit"></span>
-                            <span id="exact_down2" class="exact-time"></span>
+                            <span id="ttnt_c1_2" class="train-time">--</span><span id="unit_c1_2" class="train-unit"></span>
+                            <span id="exact_c1_2" class="exact-time"></span>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="divider"></div>
+        <!-- 卡片 2: 由調景嶺/將軍澳往康城 (支援動態切換) -->
+        <div class="card mtr-card">
+            <div class="mtr-header">
+                <div class="station-title">
+                    <span id="card2-station-title">調景嶺站</span> <span class="station-badge">將軍澳綫</span>
+                </div>
+                <div class="update-time">
+                    <span id="network-status-c2"></span>
+                    <span id="updated-c2">最後更新 --:--</span>
+                </div>
+            </div>
 
-            <!-- 由調景嶺往康城列車 (抵站推算) -->
             <div class="train-section">
                 <div class="direction-label inbound">
-                    <span>🏁 由調景嶺往康城</span>
+                    <span id="card2-direction-label">🏁 由 調景嶺站 往 康城</span>
+                    <button id="toggle-c2-btn" class="toggle-btn" onclick="toggleCard2Station()">⇄ 切換至將軍澳站</button>
                 </div>
                 <div class="train-list">
                     <div class="train-item first-train inbound-bg">
                         <div>
-                            <div id="dest_up1" class="train-dest">載入中...</div>
-                            <div id="plat_up1" class="train-plat">-- 月台</div>
+                            <div id="dest_c2_1" class="train-dest">載入中...</div>
+                            <div id="plat_c2_1" class="train-plat">-- 月台</div>
                         </div>
                         <div class="train-time-wrap">
-                            <span id="ttnt_up1" class="train-time">--</span><span id="unit_up1" class="train-unit"></span>
-                            <span id="exact_up1" class="exact-time"></span>
+                            <span id="ttnt_c2_1" class="train-time">--</span><span id="unit_c2_1" class="train-unit"></span>
+                            <span id="exact_c2_1" class="exact-time"></span>
                         </div>
                     </div>
                     <div class="train-item second-train">
                         <div>
-                            <div id="dest_up2" class="train-dest">載入中...</div>
-                            <div id="plat_up2" class="train-plat">-- 月台</div>
+                            <div id="dest_c2_2" class="train-dest">載入中...</div>
+                            <div id="plat_c2_2" class="train-plat">-- 月台</div>
                         </div>
                         <div class="train-time-wrap">
-                            <span id="ttnt_up2" class="train-time">--</span><span id="unit_up2" class="train-unit"></span>
-                            <span id="exact_up2" class="exact-time"></span>
+                            <span id="ttnt_c2_2" class="train-time">--</span><span id="unit_c2_2" class="train-unit"></span>
+                            <span id="exact_c2_2" class="exact-time"></span>
                         </div>
                     </div>
                 </div>
@@ -404,46 +430,50 @@
     </div>
 
     <script>
-        // 快取 DOM 元素
         const dom = {};
-        
+        let card2Station = 'TIK'; // 預設起點站: TIK (調景嶺), 可切換為 TKO (將軍澳)
+
         function cacheDOM() {
             const ids = [
                 'scripture', 'scripture-ref', 'weather-icon', 'temp', 'humidity',
-                'network-status', 'updated',
-                'dest_down1', 'plat_down1', 'ttnt_down1', 'unit_down1', 'exact_down1',
-                'dest_down2', 'plat_down2', 'ttnt_down2', 'unit_down2', 'exact_down2',
-                'dest_up1', 'plat_up1', 'ttnt_up1', 'unit_up1', 'exact_up1',
-                'dest_up2', 'plat_up2', 'ttnt_up2', 'unit_up2', 'exact_up2'
+                'network-status-c1', 'updated-c1', 'network-status-c2', 'updated-c2',
+                'card2-station-title', 'card2-direction-label', 'toggle-c2-btn',
+                'dest_c1_1', 'plat_c1_1', 'ttnt_c1_1', 'unit_c1_1', 'exact_c1_1',
+                'dest_c1_2', 'plat_c1_2', 'ttnt_c1_2', 'unit_c1_2', 'exact_c1_2',
+                'dest_c2_1', 'plat_c2_1', 'ttnt_c2_1', 'unit_c2_1', 'exact_c2_1',
+                'dest_c2_2', 'plat_c2_2', 'ttnt_c2_2', 'unit_c2_2', 'exact_c2_2'
             ];
             ids.forEach(id => {
                 dom[id] = document.getElementById(id);
             });
         }
 
-        // 系統變數
-        let firstDownTargetTime = null;
-        let firstUpTargetTime = null;
-        let isFirstDownArriving = false;
-        let isFirstUpArriving = false;
+        let firstC1TargetTime = null;
+        let firstC2TargetTime = null;
+        let isFirstC1Arriving = false;
+        let isFirstC2Arriving = false;
         let timeOffset = 0; 
         
-        // 簡化各站預計行車時間配置 (秒)
-        const stationJourneySeconds = {
-            'LHP': 0,      // 本站
-            'TKO': 210,    // 將軍澳 3.5m
-            'TIK': 390,    // 調景嶺 6.5m
-            'YAT': 570,    // 油塘 9.5m
-            'NOP': 930     // 北角 15.5m
-        };
-
         const destNames = { 'NOP': '往 北角', 'TIK': '往 調景嶺', 'LHP': '往 康城', 'TKO': '往 將軍澳' };
         const matthewPassages = [ "1:21", "2:11", "3:17", "5:3-12", "6:9-13", "7:7-8", "11:28-30", "16:24", "28:18-20" ];
 
-        // 工具函數：標準化解析港鐵時間字串 (相容 iOS Safari 及主流瀏覽器)
+        function toggleCard2Station() {
+            if (card2Station === 'TIK') {
+                card2Station = 'TKO';
+                dom['card2-station-title'].innerText = '將軍澳站';
+                dom['card2-direction-label'].innerText = '🏁 由 將軍澳站 往 康城';
+                dom['toggle-c2-btn'].innerText = '⇄ 切換至調景嶺站';
+            } else {
+                card2Station = 'TIK';
+                dom['card2-station-title'].innerText = '調景嶺站';
+                dom['card2-direction-label'].innerText = '🏁 由 調景嶺站 往 康城';
+                dom['toggle-c2-btn'].innerText = '⇄ 切換至將軍澳站';
+            }
+            fetchMTRData();
+        }
+
         function parseMTRTime(timeStr) {
             if (!timeStr) return null;
-            // 將 "YYYY-MM-DD HH:mm:ss" 轉為 "YYYY-MM-DDTHH:mm:ss+08:00" ISO 8601 格式
             const isoStr = timeStr.trim().replace(' ', 'T') + '+08:00';
             const timestamp = new Date(isoStr).getTime();
             return isNaN(timestamp) ? null : timestamp;
@@ -460,7 +490,6 @@
             return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         }
 
-        // API：聖言
         async function fetchDailyMatthewGospel() {
             try {
                 const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
@@ -477,7 +506,6 @@
             }
         }
 
-        // API：天氣
         async function fetchHKOWeather() {
             try {
                 const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc');
@@ -493,7 +521,6 @@
             } catch (error) { console.error('Weather Fetch Error'); }
         }
 
-        // UI 升級：顯示倒數與實際時間、加入動畫狀態
         function updateCountdownUI(targetTime, isArriving, ttntId, unitId, exactId) {
             const elTtnt = dom[ttntId];
             const elUnit = dom[unitId];
@@ -521,158 +548,122 @@
         }
 
         function tickFirstTrainCountdown() {
-            updateCountdownUI(firstDownTargetTime, isFirstDownArriving, 'ttnt_down1', 'unit_down1', 'exact_down1');
-            updateCountdownUI(firstUpTargetTime, isFirstUpArriving, 'ttnt_up1', 'unit_up1', 'exact_up1');
+            updateCountdownUI(firstC1TargetTime, isFirstC1Arriving, 'ttnt_c1_1', 'unit_c1_1', 'exact_c1_1');
+            updateCountdownUI(firstC2TargetTime, isFirstC2Arriving, 'ttnt_c2_1', 'unit_c2_1', 'exact_c2_1');
         }
 
-        function setEmptyState(dir, index, msg) {
-            dom[`dest_${dir}${index}`].innerText = msg;
-            dom[`plat_${dir}${index}`].innerText = '-- 月台';
-            dom[`ttnt_${dir}${index}`].innerText = '--';
-            dom[`unit_${dir}${index}`].innerText = '';
-            dom[`exact_${dir}${index}`].innerText = '';
-            dom[`ttnt_${dir}${index}`].className = 'train-time';
+        function setEmptyState(cardPrefix, index, msg) {
+            dom[`dest_${cardPrefix}_${index}`].innerText = msg;
+            dom[`plat_${cardPrefix}_${index}`].innerText = '-- 月台';
+            dom[`ttnt_${cardPrefix}_${index}`].innerText = '--';
+            dom[`unit_${cardPrefix}_${index}`].innerText = '';
+            dom[`exact_${cardPrefix}_${index}`].innerText = '';
+            dom[`ttnt_${cardPrefix}_${index}`].className = 'train-time';
         }
 
-        // 主資料抓取與邏輯
         async function fetchMTRData() {
             const requestStartTime = Date.now();
-            const stations = ['LHP', 'TKO', 'TIK', 'YAT', 'NOP'];
             
             try {
-                // 平行抓取所有資料
-                const responses = await Promise.all(
-                    stations.map(sta => fetch(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TKL&sta=${sta}`).then(r => r.json()).catch(() => null))
-                );
+                const [resLHP, resCard2] = await Promise.all([
+                    fetch(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TKL&sta=LHP`).then(r => r.json()).catch(() => null),
+                    fetch(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TKL&sta=${card2Station}`).then(r => r.json()).catch(() => null)
+                ]);
                 
-                dom['network-status'].innerText = '';
+                dom['network-status-c1'].innerText = '';
+                dom['network-status-c2'].innerText = '';
                 const rtt = Date.now() - requestStartTime;
 
-                const resLHP = responses[0];
                 const currTimeMs = resLHP?.curr_time ? parseMTRTime(resLHP.curr_time) : null;
+                const updateTimeString = resLHP?.curr_time ? `最後更新 ${resLHP.curr_time.split(' ')[1].substring(0,5)}` : `最後更新 ${getFormattedCurrentTime()}`;
 
                 if (currTimeMs) {
                     timeOffset = (currTimeMs + (rtt / 2)) - Date.now();
-                    dom['updated'].innerText = `最後更新 ${resLHP.curr_time.split(' ')[1].substring(0,5)}`;
-                } else {
-                    dom['updated'].innerText = `最後更新 ${getFormattedCurrentTime()}`;
                 }
+                dom['updated-c1'].innerText = updateTimeString;
+                dom['updated-c2'].innerText = updateTimeString;
 
-                // --- 1. 處理往市區方向 (DOWN) ---
-                const mtrLHPData = resLHP?.data?.['TKL-LHP'];
-                if (resLHP?.status === 1 && mtrLHPData?.DOWN && mtrLHPData.DOWN.length > 0) {
-                    const downTrains = mtrLHPData.DOWN;
-
+                // --- 1. 卡片一：由康城站往調景嶺/北角 (LHP DOWN) ---
+                const lhpDownTrains = resLHP?.data?.['TKL-LHP']?.DOWN;
+                if (resLHP?.status === 1 && lhpDownTrains && lhpDownTrains.length > 0) {
                     // 車次 1
-                    dom['dest_down1'].innerText = destNames[downTrains[0].dest] || `往 ${downTrains[0].dest}`;
-                    dom['plat_down1'].innerText = `${downTrains[0].plat} 月台`;
-                    if (downTrains[0].ttnt === '0' || !downTrains[0].time) {
-                        isFirstDownArriving = true;
-                        firstDownTargetTime = null;
+                    dom['dest_c1_1'].innerText = destNames[lhpDownTrains[0].dest] || `往 ${lhpDownTrains[0].dest}`;
+                    dom['plat_c1_1'].innerText = `${lhpDownTrains[0].plat} 月台`;
+                    if (lhpDownTrains[0].ttnt === '0' || !lhpDownTrains[0].time) {
+                        isFirstC1Arriving = true;
+                        firstC1TargetTime = null;
                     } else {
-                        isFirstDownArriving = false;
-                        firstDownTargetTime = parseMTRTime(downTrains[0].time);
+                        isFirstC1Arriving = false;
+                        firstC1TargetTime = parseMTRTime(lhpDownTrains[0].time);
                     }
 
                     // 車次 2
-                    if (downTrains.length > 1) {
-                        dom['dest_down2'].innerText = destNames[downTrains[1].dest] || `往 ${downTrains[1].dest}`;
-                        dom['plat_down2'].innerText = `${downTrains[1].plat} 月台`;
-                        const t2Time = parseMTRTime(downTrains[1].time);
-                        updateCountdownUI(t2Time, downTrains[1].ttnt === '0', 'ttnt_down2', 'unit_down2', 'exact_down2');
+                    if (lhpDownTrains.length > 1) {
+                        dom['dest_c1_2'].innerText = destNames[lhpDownTrains[1].dest] || `往 ${lhpDownTrains[1].dest}`;
+                        dom['plat_c1_2'].innerText = `${lhpDownTrains[1].plat} 月台`;
+                        const t2Time = parseMTRTime(lhpDownTrains[1].time);
+                        updateCountdownUI(t2Time, lhpDownTrains[1].ttnt === '0', 'ttnt_c1_2', 'unit_c1_2', 'exact_c1_2');
                     } else {
-                        setEmptyState('down', 2, '暫無下班車');
+                        setEmptyState('c1', 2, '暫無下班車');
                     }
                 } else {
-                    setEmptyState('down', 1, '非服務時間');
-                    setEmptyState('down', 2, '非服務時間');
-                    isFirstDownArriving = false;
-                    firstDownTargetTime = null;
+                    setEmptyState('c1', 1, '非服務時間');
+                    setEmptyState('c1', 2, '非服務時間');
+                    isFirstC1Arriving = false;
+                    firstC1TargetTime = null;
                 }
 
-                // --- 2. 處理抵站方向 (UP - 跨站推算) ---
-                let rawUpCandidates = [];
-                const nowMs = Date.now() + timeOffset;
-
-                stations.forEach((sta, idx) => {
-                    const res = responses[idx];
-                    const staData = res?.data?.[`TKL-${sta}`]?.UP;
-                    
-                    if (staData) {
-                        staData.forEach(t => {
-                            if (sta === 'LHP' || t.dest === 'LHP') {
-                                if (t.time) {
-                                    const baseTime = parseMTRTime(t.time);
-                                    if (baseTime) {
-                                        rawUpCandidates.push({
-                                            plat: sta === 'LHP' ? (t.plat || '1') : '1',
-                                            targetTime: baseTime + (stationJourneySeconds[sta] * 1000),
-                                            isArriving: (sta === 'LHP' && t.ttnt === '0')
-                                        });
-                                    }
-                                } else if (sta === 'LHP' && t.ttnt === '0') {
-                                    rawUpCandidates.push({ plat: t.plat || '1', targetTime: nowMs, isArriving: true });
-                                }
-                            }
-                        });
-                    }
-                });
-
-                // 過濾過去的時間並排序去重 (相差少於 90 秒視為同一班車)
-                rawUpCandidates = rawUpCandidates.filter(c => c.targetTime >= nowMs - 30000).sort((a, b) => a.targetTime - b.targetTime);
-                const upTrains = [];
-                rawUpCandidates.forEach(candidate => {
-                    if (!upTrains.some(existing => Math.abs(existing.targetTime - candidate.targetTime) < 90000)) {
-                        upTrains.push(candidate);
-                    }
-                });
-
-                if (upTrains.length > 0) {
-                    // 車次 1
-                    dom['dest_up1'].innerText = '往 康城';
-                    dom['plat_up1'].innerText = `${upTrains[0].plat} 月台`;
-                    isFirstUpArriving = upTrains[0].isArriving;
-                    firstUpTargetTime = upTrains[0].targetTime;
-
-                    // 車次 2
-                    if (upTrains.length > 1) {
-                        dom['dest_up2'].innerText = '往 康城';
-                        dom['plat_up2'].innerText = `${upTrains[1].plat} 月台`;
-                        updateCountdownUI(upTrains[1].targetTime, upTrains[1].isArriving, 'ttnt_up2', 'unit_up2', 'exact_up2');
-                    } else {
-                        setEmptyState('up', 2, '暫無下班車');
-                    }
-                } else {
-                    setEmptyState('up', 1, '暫無抵站列車');
-                    setEmptyState('up', 2, '暫無下班車');
-                    isFirstUpArriving = false;
-                    firstUpTargetTime = null;
-                }
+                // --- 2. 卡片二：由調景嶺/將軍澳往康城 (UP 綫過濾往康城列車) ---
+                const card2DataKey = `TKL-${card2Station}`;
+                const card2UpTrains = resCard2?.data?.[card2DataKey]?.UP?.filter(t => t.dest === 'LHP') || [];
                 
-                // 強制更新 UI
+                if (resCard2?.status === 1 && card2UpTrains.length > 0) {
+                    // 車次 1
+                    dom['dest_c2_1'].innerText = '往 康城';
+                    dom['plat_c2_1'].innerText = `${card2UpTrains[0].plat} 月台`;
+                    if (card2UpTrains[0].ttnt === '0' || !card2UpTrains[0].time) {
+                        isFirstC2Arriving = true;
+                        firstC2TargetTime = null;
+                    } else {
+                        isFirstC2Arriving = false;
+                        firstC2TargetTime = parseMTRTime(card2UpTrains[0].time);
+                    }
+
+                    // 車次 2
+                    if (card2UpTrains.length > 1) {
+                        dom['dest_c2_2'].innerText = '往 康城';
+                        dom['plat_c2_2'].innerText = `${card2UpTrains[1].plat} 月台`;
+                        const t2Time = parseMTRTime(card2UpTrains[1].time);
+                        updateCountdownUI(t2Time, card2UpTrains[1].ttnt === '0', 'ttnt_c2_2', 'unit_c2_2', 'exact_c2_2');
+                    } else {
+                        setEmptyState('c2', 2, '暫無下班車');
+                    }
+                } else {
+                    setEmptyState('c2', 1, '暫無列車往康城');
+                    setEmptyState('c2', 2, '暫無下班車');
+                    isFirstC2Arriving = false;
+                    firstC2TargetTime = null;
+                }
+
                 tickFirstTrainCountdown();
 
             } catch (error) {
                 console.error('MTR Fetch Error:', error);
-                dom['network-status'].innerText = '⚠️ 連線異常 | ';
-                dom['network-status'].className = 'status-error';
+                dom['network-status-c1'].innerText = '⚠️ 連線異常 | ';
+                dom['network-status-c1'].className = 'status-error';
+                dom['network-status-c2'].innerText = '⚠️ 連線異常 | ';
+                dom['network-status-c2'].className = 'status-error';
             }
         }
 
-        // 初始化
         function initDashboard() {
             cacheDOM();
             fetchDailyMatthewGospel();
             fetchHKOWeather();
             fetchMTRData();
 
-            // 每 1 秒刷新本機前端倒數
             setInterval(tickFirstTrainCountdown, 1000);
-
-            // 每 25 秒重新抓取資料，避免 API rate limit
             setInterval(fetchMTRData, 25000);
-
-            // 每 10 分鐘更新天氣
             setInterval(fetchHKOWeather, 600000);
         }
 
