@@ -53,12 +53,10 @@ def parse_meditation_page(html_text):
     return title, reading, content
 
 
-def scrape_month_data(year=None, month=None):
+def scrape_current_month_data():
     today = date.today()
-    if year is None:
-        year = today.year
-    if month is None:
-        month = today.month
+    year = today.year
+    month = today.month
 
     base_url = "https://www.dailyscripture.net/daily-meditation/"
     headers = {
@@ -73,7 +71,7 @@ def scrape_month_data(year=None, month=None):
     except FileNotFoundError:
         all_data = {}
 
-    # 計算該月份的第一天與最後一天
+    # 動態計算「執行當月」的第一天與最後一天
     start_date = date(year, month, 1)
     last_day = calendar.monthrange(year, month)[1]
     end_date = date(year, month, last_day)
@@ -119,7 +117,4 @@ def scrape_month_data(year=None, month=None):
 
 
 if __name__ == "__main__":
-    now = datetime.now()
-    
-    # 預設：執行時自動抓取「當月」整個月的資料
-    scrape_month_data(now.year, now.month)
+    scrape_current_month_data()
