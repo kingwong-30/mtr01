@@ -1,67 +1,83 @@
 import json
+import re
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
 
-URL = "https://www.dailyscripture.net/"
 
-def fetch_daily_scripture():
+def scrape_daily_gospel():
+    # 假設目標網址 (請替換為您實際爬取的網址)
+    url = "https://www.dailyscripture.servantsofword.org/readings/"
+
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        )
     }
-    
+
     try:
-        response = requests.get(URL, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
 
-        # 根據 dailyscripture.net 結構抓取元素 (草稿邏輯)
-        # 標題
-        title_el = soup.find('h1') or soup.find('h2')
-        title = title_el.get_text(strip=True) if title_el else "Daily Reading"
+        # 這裡根據網頁結構取得純文字內容
+        soup = BeautifulSoup(response.text, "html.parser")
 
-        # 福音經節出處 (例如 GOSPEL READING: Matthew 23:13-22)
-        reading = "GOSPEL READING"
-        content_paragraphs = []
+        # 取得網頁整體純文字（或特定區塊文字）
+        full_text = soup.get_text(separator="\n")
 
-        # 擷取本文內文
-        for p in soup.find_all('p'):
-            text = p.get_text(strip=True)
-            if "GOSPEL READING" in text.upper():
-                reading = text
-            elif text and not text.startswith("Copyright"):
-                content_paragraphs.append(text)
+        # --- 文字過濾邏輯 ---
+        # 1. 截取從 "GOSPEL READING:" 或 "Alternate reading:" 開始，到 "Meditation" 為止的文字
+        pattern = r"(GOSPEL READING:[\s\S]*?)(?=Meditation)"
+        match = re.search(pattern, full_text)
 
-        full_content = "\n\n".join(content_paragraphs[:3]) # 擷取主內文
+        if match:
+            gospel_content = match.group(1).strip()
+        else:
+            # 備用方案：若找不到 GOSPEL READING，嘗試抓取 Alternate reading 至 Meditation 之間
+            alt_pattern = (
+                r"Alternate reading:[^\n]*\n+([\s\S]*?)(?=Meditation)"
+            )
+            alt_match = re.search(alt_pattern, full_text)
+            gospel_content = (
+                alt_match.group(1).strip()
+                if alt_match
+                else "未能找到福音經文"
+            )
 
-        today_data = {
-            "date": datetime.now().strftime("%B %d, %Y"),
-            "title": title,
-            "reading": reading,
-            "content": full_content
+        # 拆分出第一行（例如 "GOSPEL READING: Matthew 23:13-22"）作為標題/讀經章節
+        lines = gospel_content.split("\n")
+        reading_title = lines[0] if lines else "GOSPEL READING"
+        body_text = "\n".join(lines[1:]).strip() if len(lines) > 1 else ""
+
+        # 構造輸出 json
+        data = {
+            "today": {
+                "title": "✝️ Daily Gospel",
+                "reading": reading_title,
+                "content": body_text,
+                "date": "Saint Matthew",
+            }
         }
 
-        # 讀取舊 data.json 以更新 yesterday
-        try:
-            with open("data.json", "r", encoding="utf-8") as f:
-                old_data = json.load(f)
-                yesterday_data = old_data.get("today", {})
-        except FileNotFoundError:
-            yesterday_data = today_data
-
-        result = {
-            "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "today": today_data,
-            "yesterday": yesterday_data
-        }
-
+        # 寫入 data.json
         with open("data.json", "w", encoding="utf-8") as f:
-            json.dump(result, f, ensure_ascii=False, indent=2)
+            json.dump(data, f, ensure_ascii=False, indent=2)
 
-        print("data.json 更新成功！")
+        print("成功更新 data.json")
 
     except Exception as e:
-        print(f"抓取失敗: {e}")
+        print(f"爬取失敗: {e}")
+        # 若失敗則輸出錯誤訊息 json 避免前端崩潰
+        error_data = {
+            "today": {
+                "title": "✝️ Daily Gospel",
+                "reading": "",
+                "content": "載入聖言失敗，請稍後再試。",
+                "date": "",
+            }
+        }
+        with open("data.json", "w", encoding="utf-8") as f:
+            json.dump(error_data, f, ensure_ascii=False, indent=2)
+
 
 if __name__ == "__main__":
-    fetch_daily_scripture()
+    scrape_daily_gospel()
