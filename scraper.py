@@ -25,6 +25,7 @@ def parse_meditation_page(html_text):
     raw_text = soup.get_text(separator="\n")
     clean_text = unicodedata.normalize("NFKD", raw_text)
 
+    # 匹配 Gospel Reading 區塊內容
     pattern = (
         r"(Gospel\s+Reading:?[\s\S]*?)(?=(?:Meditation|Old\s+Testament|$))"
     )
@@ -40,23 +41,34 @@ def parse_meditation_page(html_text):
 
     lines = [line.strip() for line in extracted.split("\n") if line.strip()]
 
-    if lines:
-        first_line = lines[0]
-        reading = re.sub(
-            r"^Gospel\s+Reading:\s*", "", first_line, flags=re.IGNORECASE
+    cleaned_lines = []
+    for line in lines:
+        # 過濾純標題行 (例如 "Gospel Reading:")
+        if re.match(r"^Gospel\s+Reading:?$", line, re.IGNORECASE):
+            continue
+        # 若標題與出處同行 (例如 "Gospel Reading: Matthew 17:22-27")，清除前綴字眼
+        sub_line = re.sub(
+            r"^Gospel\s+Reading:\s*", "", line, flags=re.IGNORECASE
         ).strip()
-        body_lines = lines[1:] if len(lines) > 1 else []
+        if sub_line:
+            cleaned_lines.append(sub_line)
+
+    reading = ""
+    content = ""
+
+    if cleaned_lines:
+        # 第一行提取為經文出處 (例如 Matthew 17:22-27)
+        reading = cleaned_lines[0]
+        # 其餘行數合併為經文內文
+        body_lines = cleaned_lines[1:] if len(cleaned_lines) > 1 else []
         content = "\n".join(body_lines).strip()
-    else:
-        reading = "Gospel Reading"
-        content = extracted
 
     return title, reading, content
 
 
 def scrape_next_month_data():
     today = date.today()
-    
+
     # 計算下一個月份與年份（支援跨年：12 月自動切換至明年 1 月）
     if today.month == 12:
         next_year = today.year + 1
@@ -85,7 +97,9 @@ def scrape_next_month_data():
     delta = timedelta(days=1)
 
     curr = start_date
-    print(f"🚀 開始爬取【下一個月】{next_year} 年 {next_month} 月份聖言資料 ({start_date} 至 {end_date})...")
+    print(
+        f"🚀 開始爬取【下一個月】{next_year} 年 {next_month} 月份聖言資料 ({start_date} 至 {end_date})..."
+    )
 
     session = requests.Session()
 
@@ -106,11 +120,9 @@ def scrape_next_month_data():
                     "reading": reading,
                     "content": content,
                 }
-                print(f"  [✅] {date_key}: {title}")
+                print(f"  [✅] {date_key}: {title} | {reading}")
             else:
-                print(
-                    f"  [⚠️] {date_key}: 狀態碼 {resp.status_code}"
-                )
+                print(f"  [⚠️] {date_key}: 狀態碼 {resp.status_code}")
         except Exception as e:
             print(f"  [❌] {date_key} 失敗: {e}")
 
@@ -134,18 +146,20 @@ def scrape_next_month_data():
     try:
         with open("data.json", "r", encoding="utf-8") as f:
             verified_data = json.load(f)
-        
+
         final_count = len(verified_data)
         print(f"📊 總資料筆數：{final_count} 筆")
-        
+
         recent_keys = sorted(verified_data.keys())[-3:]
-        print("🗓️ 最新寫入的日期範例：")
+        print("🗓️ 最新寫入的日期與經文出處範例：")
         for key in recent_keys:
-            print(f"   - {key}: {verified_data[key].get('title')}")
+            print(
+                f"   - {key}: [{verified_data[key].get('reading')}] {verified_data[key].get('title')}"
+            )
 
     except Exception as e:
         print(f"❌ 讀取驗證失敗：{e}")
-    
+
     print("=" * 40 + "\n")
     print(f"🎉 {next_year} 年 {next_month} 月份資料已成功儲存並驗證完成！")
 
