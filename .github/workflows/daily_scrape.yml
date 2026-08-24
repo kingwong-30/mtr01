@@ -1,32 +1,34 @@
-name: Daily Scripture Scraper
+name: Daily Scrape
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: '0 22 * * *' # UTC 22:00 = HKT 06:00
-  workflow_dispatch: # 支援手動觸發
+    - cron: '0 22 * * *'  # 每日香港時間 06:00 (UTC 22:00)
+
+# 1. 必須明確授權 Actions 寫入 Repo
+permissions:
+  contents: write
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Python # 或 Node.js，視乎你的抓取腳本
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
-
-      - name: Install Dependencies
-        run: |
-          pip install requests beautifulsoup4
+          python-version: '3.10'
 
       - name: Run Scraper
-        run: python scraper.py
+        run: |
+          python scraper.py  # 執行你的抓取程式並輸出 data.json
 
       - name: Commit and Push data.json
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add data.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "auto: update daily scripture data.json" && git push)
+          git commit -m "Auto: update data.json" || exit 0
+          git push
