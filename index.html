@@ -580,13 +580,15 @@
             return formatter.format(new Date());
         }
 
-        // 從 data.json 載入今日聖言
+        // 從 data.json 載入今日聖言 (已修正問題 4: 重置展開狀態)
         async function loadDailyScriptureFromJSON() {
             try {
+                isScriptureExpanded = false; // 重置展開/收起狀態變數
+                
                 const res = await fetch('./data.json?t=' + Date.now());
                 const allData = await res.json();
                 
-                const todayKey = getHongKongDateKey(); // 例: "2026-08-24"
+                const todayKey = getHongKongDateKey();
                 const today = allData[todayKey];
                 
                 const titleEl = dom['scripture-title-text'];
@@ -596,19 +598,26 @@
                 const toggleBtn = dom['scripture-toggle-btn'];
 
                 if (today) {
-                    if (titleEl) titleEl.innerText = today.title || "Daily Gospel";
+                    if (titleEl) titleEl.innerText = today.title || "Daily Gospel Meditation";
                     if (dateEl) dateEl.innerText = today.date || "";
                     if (readingEl) readingEl.innerText = today.reading || "";
-                    if (scriptureEl) scriptureEl.innerText = today.content || "";
+                    if (scriptureEl) {
+                        scriptureEl.innerText = today.content || "";
+                        scriptureEl.classList.add('collapsed'); // 恢復預設摺疊樣式
+                    }
 
                     if (today.content && today.content.length > 80) {
-                        if (toggleBtn) toggleBtn.style.display = 'inline-block';
+                        if (toggleBtn) {
+                            toggleBtn.innerText = '展開全文 🔽';
+                            toggleBtn.style.display = 'inline-block';
+                        }
                     } else {
                         if (scriptureEl) scriptureEl.classList.remove('collapsed');
                         if (toggleBtn) toggleBtn.style.display = 'none';
                     }
                 } else {
-                    if (titleEl) titleEl.innerText = "Daily Gospel";
+                    if (titleEl) titleEl.innerText = "Daily Gospel Meditation";
+                    if (readingEl) readingEl.innerText = "";
                     if (scriptureEl) scriptureEl.innerText = "未有找到今日之聖言內容。";
                     if (toggleBtn) toggleBtn.style.display = 'none';
                 }
@@ -765,6 +774,7 @@
             dom[`ttnt_${cardPrefix}_${index}`].className = 'train-time';
         }
 
+        // 載入港鐵資料 (已修正問題 2: 正確處理連線異常)
         async function fetchMTRData() {
             const requestStartTime = Date.now();
             
@@ -773,7 +783,12 @@
                     fetch(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TKL&sta=LHP`).then(r => r.json()).catch(() => null),
                     fetch(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TKL&sta=${card2Station}`).then(r => r.json()).catch(() => null)
                 ]);
-                
+
+                // 若網絡異常或 API 失敗回傳 null，拋出錯誤進入 catch 區塊顯示連線警告
+                if (!resLHP || !resCard2) {
+                    throw new Error('MTR API 連線失敗或網絡異常');
+                }
+
                 dom['network-status-c1'].innerText = '';
                 dom['network-status-c2'].innerText = '';
                 const rtt = Date.now() - requestStartTime;
