@@ -1,152 +1,150 @@
 import calendar
+import datetime
 import json
 import os
 import re
 import time
 import unicodedata
-from datetime import date, datetime, timedelta
-import requests
 from bs4 import BeautifulSoup
+import requests
 
 
-def parse_meditation_page(html_text):
-    soup = BeautifulSoup(html_text, "html.parser")
+def get_date_range():
+    """計算從當月 1 號到下個月最後一天的日期列表"""
+    today = datetime.date.today()
+    start_date = today.replace(day=1)
 
-    title_el = soup.find(["h1", "h2", "header"])
-    title = (
-        title_el.get_text(strip=True)
-        if title_el
-        else "Daily Gospel Meditation"
-    )
-
-    for tag in soup(["script", "style"]):
-        tag.extract()
-
-    raw_text = soup.get_text(separator="\n")
-    clean_text = unicodedata.normalize("NFKD", raw_text)
-
-    pattern = (
-        r"(Gospel\s+Reading:?[\s\S]*?)(?=(?:Meditation|Old\s+Testament|$))"
-    )
-    match = re.search(pattern, clean_text, re.IGNORECASE)
-
-    extracted = ""
-    if match:
-        extracted = match.group(1).strip()
-    else:
-        alt_pattern = r"(Alternate\s+reading:?[\s\S]*?)(?=(?:Meditation|Old\s+Testament|$))"
-        alt_match = re.search(alt_pattern, clean_text, re.IGNORECASE)
-        extracted = alt_match.group(1).strip() if alt_match else ""
-
-    lines = [line.strip() for line in extracted.split("\n") if line.strip()]
-
-    cleaned_lines = []
-    for line in lines:
-        if re.match(r"^Gospel\s+Reading:?$", line, re.IGNORECASE):
-            continue
-        sub_line = re.sub(
-            r"^Gospel\s+Reading:\s*", "", line, flags=re.IGNORECASE
-        ).strip()
-        if sub_line:
-            cleaned_lines.append(sub_line)
-
-    reading = ""
-    content = ""
-
-    if cleaned_lines:
-        first_line = cleaned_lines[0]
-        # 【修復問題 5】用正則驗證第一行是否包含經文出處格式 (例如 "17:22" 或 "Matthew 17:22-27")
-        has_chapter_ref = bool(re.search(r"\d+:\d+", first_line))
-
-        if len(cleaned_lines) == 1:
-            if has_chapter_ref:
-                reading = first_line
-                content = ""
-            else:
-                reading = ""
-                content = first_line
-        else:
-            if has_chapter_ref:
-                reading = first_line
-                body_lines = cleaned_lines[1:]
-            else:
-                reading = ""
-                body_lines = cleaned_lines
-            content = "\n".join(body_lines).strip()
-
-    return title, reading, content
-
-
-def scrape_current_and_next_month_data():
-    today = date.today()
-
-    # 【修復問題 3】起點設為本月 1 號
-    start_date = date(today.year, today.month, 1)
-
-    # 計算下一個月的年份與月份
     if today.month == 12:
-        next_year = today.year + 1
+        next_month_year = today.year + 1
         next_month = 1
     else:
-        next_year = today.year
+        next_month_year = today.year
         next_month = today.month + 1
 
-    # 終點設為下個月的最後一天
-    last_day_of_next_month = calendar.monthrange(next_year, next_month)[1]
-    end_date = date(next_year, next_month, last_day_of_next_month)
-
-    base_url = "https://www.dailyscripture.net/daily-meditation/"
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        )
-    }
-
-    try:
-        with open("data.json", "r", encoding="utf-8") as f:
-            all_data = json.load(f)
-    except FileNotFoundError:
-        all_data = {}
-
-    curr = start_date
-    delta = timedelta(days=1)
-
-    print(
-        f"🚀 開始爬取【本月與下個月】聖言資料 ({start_date} 至 {end_date})..."
+    _, last_day_of_next_month = calendar.monthrange(
+        next_month_year, next_month
     )
+    end_date = datetime.date(
+        next_month_year, next_month, last_day_of_next_month
+    )
+
+    date_list = []
+    current_date = start_date
+    while current_date <= end_date:
+        date_list.append(current_date)
+        current_date += datetime.timedelta(days=1)
+
+    return date_list
+
+
+def parse_meditation_page(html_content):
+    """解析 HTML 內容，擷取福音經文與出處"""
+    soup = BeautifulSoup(html_content, "html.parser")
+
+    # 清理 script 與 style 標籤
+    for tag in soup(["script", "style"]):
+        tag.decompose()
+
+    # 取得純文字並進行 Unicode 標準化
+    text = soup.get_text(separator="\n")
+    normalized_text = unicodedata.normalize("NFKC", text)
+
+    # 嘗試匹配 "Gospel Reading:" 區段
+    gospel_match = re.search(
+        r"Gospel Reading:\s*(.*?)(?=\n\s*\n|Meditation|\Z)",
+        normalized_text,
+        re.DOTALL | re.IGNORECASE,
+    )
+
+    # 備用機制：匹配 "Alternate reading:"
+    if not gospel_match:
+        gospel_match = re.search(
+            r"Alternate reading:\s*(.*?)(?=\n\s*\n|Meditation|\Z)",
+            normalized_text,
+            re.DOTALL | re.IGNORECASE,
+        )
+
+    if not gospel_match:
+        return None
+
+    raw_gospel = gospel_match.group(1).strip()
+    lines = [line.strip() for line in raw_gospel.split("\n") if line.strip()]
+
+    if not lines:
+        return None
+
+    # 分離經文出處與正文（檢查第一行是否含有如 "10:1-12" 的章節格式）
+    reference = ""
+    passage_lines = []
+
+    if re.search(r"\d+:\d+", lines[0]):
+        reference = lines[0]
+        passage_lines = lines[1:]
+    else:
+        passage_lines = lines
+
+    passage = "\n".join(passage_lines)
+
+    return {"reference": reference, "passage": passage}
+
+
+def main():
+    json_filename = "data.json"
+
+    # 若 data.json 已存在則先讀取現有資料
+    if os.path.exists(json_filename):
+        try:
+            with open(json_filename, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            data = {}
+    else:
+        data = {}
+
+    date_range = get_date_range()
+
+    # 使用 Session 重複使用 TCP 連線
     session = requests.Session()
+    session.headers.update(
+        {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                " (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+            )
+        }
+    )
 
-    while curr <= end_date:
-        date_key = curr.strftime("%Y-%m-%d")
-        formatted_date_str = curr.strftime("%A %d %B %Y")
-        url_date_param = curr.strftime("%b%d").lower()
+    for date_obj in date_range:
+        date_str = date_obj.strftime("%Y-%m-%d")
 
-        target_url = f"{base_url}?ds_year={curr.year}&date={url_date_param}"
+        # 依目標網站 URL 結構帶入日期參數
+        url = (
+            f"https://www.dailyscripture.net/daily-meditation/?ds_date={date_str}"
+        )
 
         try:
-            resp = session.get(target_url, headers=headers, timeout=12)
-            if resp.status_code == 200:
-                title, reading, content = parse_meditation_page(resp.text)
-                all_data[date_key] = {
-                    "title": title,
-                    "date": formatted_date_str,
-                    "reading": reading,
-                    "content": content,
-                }
-                print(f"  [✅] {date_key}: {title} | {reading}")
+            response = session.get(url, timeout=10)
+            if response.status_code == 200:
+                result = parse_meditation_page(response.text)
+                if result:
+                    data[date_str] = result
+                    print(f"[{date_str}] 成功抓取數據")
+                else:
+                    print(f"[{date_str}] 未能解析出福音內容")
             else:
-                print(f"  [⚠️] {date_key}: 狀態碼 {resp.status_code}")
+                print(f"[{date_str}] 請求失敗，狀態碼: {response.status_code}")
         except Exception as e:
-            print(f"  [❌] {date_key} 失敗: {e}")
+            print(f"[{date_str}] 發生錯誤: {e}")
 
+        # 請求間隔 0.3 秒以降低伺服器負擔
         time.sleep(0.3)
-        curr += delta
 
-    with open("data.json", "w", encoding="utf-8") as f:
-        json.dump(all_data, f, ensure_ascii=False, indent=2)
+    # 將結果以格式化的 UTF-8 JSON 格式寫回
+    with open(json_filename, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
-    print(f"\n🎉 資料爬取完成，已儲存至 data.json (共 {len(all_data)} 筆資料)")
+    print("\n資料爬取與更新完成！")
 
 
 if __name__ == "__main__":
-    scrape_current_and_next_month_data()
+    main()
