@@ -41,28 +41,22 @@ def parse_meditation_page(html_content):
     """解析 HTML 內容，擷取福音經文與出處"""
     soup = BeautifulSoup(html_content, "html.parser")
 
-    # 清理 script 與 style 標籤
-    for tag in soup(["script", "style"]):
+    # 清理非文字內容標籤
+    for tag in soup(["script", "style", "nav", "footer", "header"]):
         tag.decompose()
 
-    # 取得純文字並進行 Unicode 標準化
-    text = soup.get_text(separator="\n")
-    normalized_text = unicodedata.normalize("NFKC", text)
-
-    # 嘗試匹配 "Gospel Reading:" 區段
-    gospel_match = re.search(
-        r"Gospel Reading:\s*(.*?)(?=\n\s*\n|Meditation|\Z)",
-        normalized_text,
-        re.DOTALL | re.IGNORECASE,
+    # 優先定位主要內容區域
+    content_area = (
+        soup.find("div", class_=re.compile(r"entry-content|post-content"))
+        or soup
     )
 
-    # 備用機制：匹配 "Alternate reading:"
-    if not gospel_match:
-        gospel_match = re.search(
-            r"Alternate reading:\s*(.*?)(?=\n\s*\n|Meditation|\Z)",
-            normalized_text,
-            re.DOTALL | re.IGNORECASE,
-        )
+    text = content_area.get_text(separator="\n")
+    normalized_text = unicodedata.normalize("NFKC", text)
+
+    # 修正後的 Regex：匹配 Gospel Reading / Alternate reading，直到遇到 Meditation/Reflection 或頁尾才停止
+    pattern = r"(?:Gospel Reading|Alternate reading):\s*(.*?)(?=\n\s*(?:Meditation|Reflection|Copyright|\Z))"
+    gospel_match = re.search(pattern, normalized_text, re.DOTALL | re.IGNORECASE)
 
     if not gospel_match:
         return None
@@ -73,17 +67,18 @@ def parse_meditation_page(html_content):
     if not lines:
         return None
 
-    # 分離經文出處與正文（檢查第一行是否含有如 "10:1-12" 的章節格式）
+    # 分離經文出處與正文
     reference = ""
     passage_lines = []
 
+    # 第一行通常包含章節格式（例如 "Matthew 23:13-22"）
     if re.search(r"\d+:\d+", lines[0]):
         reference = lines[0]
         passage_lines = lines[1:]
     else:
         passage_lines = lines
 
-    passage = "\n".join(passage_lines)
+    passage = "\n".join(passage_lines).strip()
 
     return {"reference": reference, "passage": passage}
 
@@ -91,7 +86,6 @@ def parse_meditation_page(html_content):
 def main():
     json_filename = "data.json"
 
-    # 若 data.json 已存在則先讀取現有資料
     if os.path.exists(json_filename):
         try:
             with open(json_filename, "r", encoding="utf-8") as f:
@@ -103,7 +97,6 @@ def main():
 
     date_range = get_date_range()
 
-    # 使用 Session 重複使用 TCP 連線
     session = requests.Session()
     session.headers.update(
         {
@@ -116,11 +109,7 @@ def main():
 
     for date_obj in date_range:
         date_str = date_obj.strftime("%Y-%m-%d")
-
-        # 依目標網站 URL 結構帶入日期參數
-        url = (
-            f"https://www.dailyscripture.net/daily-meditation/?ds_date={date_str}"
-        )
+        url = f"https://www.dailyscripture.net/daily-meditation/?ds_date={date_str}"
 
         try:
             response = session.get(url, timeout=10)
@@ -136,10 +125,8 @@ def main():
         except Exception as e:
             print(f"[{date_str}] 發生錯誤: {e}")
 
-        # 請求間隔 0.3 秒以降低伺服器負擔
         time.sleep(0.3)
 
-    # 將結果以格式化的 UTF-8 JSON 格式寫回
     with open(json_filename, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
