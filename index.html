@@ -607,19 +607,19 @@
             return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         }
 
-        async function fetchDailyMatthewGospel() {
+        async function loadDailyScriptureFromJSON() {
             try {
-                const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
-                const passageRef = matthewPassages[dayOfYear % matthewPassages.length];
-                const res = await fetch(`https://bible-api.com/matthew+${passageRef}?translation=web`);
+                const res = await fetch('./data.json?t=' + Date.now()); // 防止瀏覽器快取
                 const data = await res.json();
-                if (data && data.text) {
-                    dom['scripture'].innerText = `"${data.text.replace(/\n/g, ' ').trim()}"`;
-                    dom['scripture-ref'].innerText = `— ${data.reference} (Saint Matthew)`;
-                }
+                const today = data.today;
+        
+                document.getElementById('scripture-title-text').innerText = today.title;
+                document.getElementById('scripture-reading').innerText = today.reading;
+                document.getElementById('scripture').innerText = today.content;
+                document.getElementById('scripture-date').innerText = today.date;
             } catch (error) {
-                dom['scripture'].innerText = '"Come to me, all you that are weary and are carrying heavy burdens..."';
-                dom['scripture-ref'].innerText = '— Matthew 11:28';
+                console.error('無法載入每日聖言 data.json:', error);
+                document.getElementById('scripture').innerText = '載入聖言失敗，請稍後再試。';
             }
         }
 
