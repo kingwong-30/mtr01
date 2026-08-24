@@ -1,5 +1,6 @@
 import calendar
 import json
+import os
 import re
 import time
 import unicodedata
@@ -110,10 +111,37 @@ def scrape_current_month_data():
         time.sleep(0.5)
         curr += delta
 
+    # 寫入檔案
     with open("data.json", "w", encoding="utf-8") as f:
         json.dump(all_data, f, ensure_ascii=False, indent=2)
 
-    print(f"🎉 {year} 年 {month} 月份資料已成功儲存至 data.json！")
+    # ================= 🔍 測試與驗證邏輯 =================
+    print("\n" + "=" * 40)
+    print("🧪 開始驗證 data.json 寫入狀態...")
+
+    if os.path.exists("data.json"):
+        file_size = os.path.getsize("data.json")
+        print(f"✅ 檔案存在：data.json ({file_size / 1024:.2f} KB)")
+    else:
+        print("❌ 錯誤：找不到 data.json 檔案！")
+
+    try:
+        with open("data.json", "r", encoding="utf-8") as f:
+            verified_data = json.load(f)
+        
+        final_count = len(verified_data)
+        print(f"📊 總資料筆數：{final_count} 筆")
+        
+        recent_keys = sorted(verified_data.keys())[-3:]
+        print("🗓️ 最新寫入的日期範例：")
+        for key in recent_keys:
+            print(f"   - {key}: {verified_data[key].get('title')}")
+
+    except Exception as e:
+        print(f"❌ 讀取驗證失敗：{e}")
+    
+    print("=" * 40 + "\n")
+    print(f"🎉 {year} 年 {month} 月份資料已成功儲存並驗證完成！")
 
 
 if __name__ == "__main__":
