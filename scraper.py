@@ -54,10 +54,16 @@ def parse_meditation_page(html_text):
     return title, reading, content
 
 
-def scrape_current_month_data():
+def scrape_next_month_data():
     today = date.today()
-    year = today.year
-    month = today.month
+    
+    # 計算下一個月份與年份（支援跨年：12 月自動切換至明年 1 月）
+    if today.month == 12:
+        next_year = today.year + 1
+        next_month = 1
+    else:
+        next_year = today.year
+        next_month = today.month + 1
 
     base_url = "https://www.dailyscripture.net/daily-meditation/"
     headers = {
@@ -72,14 +78,14 @@ def scrape_current_month_data():
     except FileNotFoundError:
         all_data = {}
 
-    # 動態計算「執行當月」的第一天與最後一天
-    start_date = date(year, month, 1)
-    last_day = calendar.monthrange(year, month)[1]
-    end_date = date(year, month, last_day)
+    # 計算「下一個月」的第一天與最後一天
+    start_date = date(next_year, next_month, 1)
+    last_day = calendar.monthrange(next_year, next_month)[1]
+    end_date = date(next_year, next_month, last_day)
     delta = timedelta(days=1)
 
     curr = start_date
-    print(f"🚀 開始爬取 {year} 年 {month} 月份聖言資料 ({start_date} 至 {end_date})...")
+    print(f"🚀 開始爬取【下一個月】{next_year} 年 {next_month} 月份聖言資料 ({start_date} 至 {end_date})...")
 
     session = requests.Session()
 
@@ -88,7 +94,7 @@ def scrape_current_month_data():
         formatted_date_str = curr.strftime("%A %d %B %Y")
         url_date_param = curr.strftime("%b%d").lower()
 
-        target_url = f"{base_url}?ds_year={year}&date={url_date_param}"
+        target_url = f"{base_url}?ds_year={next_year}&date={url_date_param}"
 
         try:
             resp = session.get(target_url, headers=headers, timeout=12)
@@ -115,7 +121,7 @@ def scrape_current_month_data():
     with open("data.json", "w", encoding="utf-8") as f:
         json.dump(all_data, f, ensure_ascii=False, indent=2)
 
-    # ================= 🔍 測試與驗證邏輯 =================
+    # 驗證數據寫入狀態
     print("\n" + "=" * 40)
     print("🧪 開始驗證 data.json 寫入狀態...")
 
@@ -141,8 +147,8 @@ def scrape_current_month_data():
         print(f"❌ 讀取驗證失敗：{e}")
     
     print("=" * 40 + "\n")
-    print(f"🎉 {year} 年 {month} 月份資料已成功儲存並驗證完成！")
+    print(f"🎉 {next_year} 年 {next_month} 月份資料已成功儲存並驗證完成！")
 
 
 if __name__ == "__main__":
-    scrape_current_month_data()
+    scrape_next_month_data()
