@@ -25,7 +25,6 @@ def parse_meditation_page(html_text):
     raw_text = soup.get_text(separator="\n")
     clean_text = unicodedata.normalize("NFKD", raw_text)
 
-    # 匹配 Gospel Reading 區塊內容
     pattern = (
         r"(Gospel\s+Reading:?[\s\S]*?)(?=(?:Meditation|Old\s+Testament|$))"
     )
@@ -43,10 +42,8 @@ def parse_meditation_page(html_text):
 
     cleaned_lines = []
     for line in lines:
-        # 過濾純標題行 (例如 "Gospel Reading:")
         if re.match(r"^Gospel\s+Reading:?$", line, re.IGNORECASE):
             continue
-        # 若標題與出處同行 (例如 "Gospel Reading: Matthew 17:22-27")，清除前綴字眼
         sub_line = re.sub(
             r"^Gospel\s+Reading:\s*", "", line, flags=re.IGNORECASE
         ).strip()
@@ -57,25 +54,46 @@ def parse_meditation_page(html_text):
     content = ""
 
     if cleaned_lines:
-        # 第一行提取為經文出處 (例如 Matthew 17:22-27)
-        reading = cleaned_lines[0]
-        # 其餘行數合併為經文內文
-        body_lines = cleaned_lines[1:] if len(cleaned_lines) > 1 else []
-        content = "\n".join(body_lines).strip()
+        first_line = cleaned_lines[0]
+        # 【修復問題 5】用正則驗證第一行是否包含經文出處格式 (例如 "17:22" 或 "Matthew 17:22-27")
+        has_chapter_ref = bool(re.search(r"\d+:\d+", first_line))
+
+        if len(cleaned_lines) == 1:
+            if has_chapter_ref:
+                reading = first_line
+                content = ""
+            else:
+                reading = ""
+                content = first_line
+        else:
+            if has_chapter_ref:
+                reading = first_line
+                body_lines = cleaned_lines[1:]
+            else:
+                reading = ""
+                body_lines = cleaned_lines
+            content = "\n".join(body_lines).strip()
 
     return title, reading, content
 
 
-def scrape_next_month_data():
+def scrape_current_and_next_month_data():
     today = date.today()
 
-    # 計算下一個月份與年份（支援跨年：12 月自動切換至明年 1 月）
+    # 【修復問題 3】起點設為本月 1 號
+    start_date = date(today.year, today.month, 1)
+
+    # 計算下一個月的年份與月份
     if today.month == 12:
         next_year = today.year + 1
         next_month = 1
     else:
         next_year = today.year
         next_month = today.month + 1
+
+    # 終點設為下個月的最後一天
+    last_day_of_next_month = calendar.monthrange(next_year, next_month)[1]
+    end_date = date(next_year, next_month, last_day_of_next_month)
 
     base_url = "https://www.dailyscripture.net/daily-meditation/"
     headers = {
@@ -90,17 +108,12 @@ def scrape_next_month_data():
     except FileNotFoundError:
         all_data = {}
 
-    # 計算「下一個月」的第一天與最後一天
-    start_date = date(next_year, next_month, 1)
-    last_day = calendar.monthrange(next_year, next_month)[1]
-    end_date = date(next_year, next_month, last_day)
+    curr = start_date
     delta = timedelta(days=1)
 
-    curr = start_date
     print(
-        f"🚀 開始爬取【下一個月】{next_year} 年 {next_month} 月份聖言資料 ({start_date} 至 {end_date})..."
+        f"🚀 開始爬取【本月與下個月】聖言資料 ({start_date} 至 {end_date})..."
     )
-
     session = requests.Session()
 
     while curr <= end_date:
@@ -108,7 +121,7 @@ def scrape_next_month_data():
         formatted_date_str = curr.strftime("%A %d %B %Y")
         url_date_param = curr.strftime("%b%d").lower()
 
-        target_url = f"{base_url}?ds_year={next_year}&date={url_date_param}"
+        target_url = f"{base_url}?ds_year={curr.year}&date={url_date_param}"
 
         try:
             resp = session.get(target_url, headers=headers, timeout=12)
@@ -126,43 +139,14 @@ def scrape_next_month_data():
         except Exception as e:
             print(f"  [❌] {date_key} 失敗: {e}")
 
-        time.sleep(0.5)
+        time.sleep(0.3)
         curr += delta
 
-    # 寫入檔案
     with open("data.json", "w", encoding="utf-8") as f:
         json.dump(all_data, f, ensure_ascii=False, indent=2)
 
-    # 驗證數據寫入狀態
-    print("\n" + "=" * 40)
-    print("🧪 開始驗證 data.json 寫入狀態...")
-
-    if os.path.exists("data.json"):
-        file_size = os.path.getsize("data.json")
-        print(f"✅ 檔案存在：data.json ({file_size / 1024:.2f} KB)")
-    else:
-        print("❌ 錯誤：找不到 data.json 檔案！")
-
-    try:
-        with open("data.json", "r", encoding="utf-8") as f:
-            verified_data = json.load(f)
-
-        final_count = len(verified_data)
-        print(f"📊 總資料筆數：{final_count} 筆")
-
-        recent_keys = sorted(verified_data.keys())[-3:]
-        print("🗓️ 最新寫入的日期與經文出處範例：")
-        for key in recent_keys:
-            print(
-                f"   - {key}: [{verified_data[key].get('reading')}] {verified_data[key].get('title')}"
-            )
-
-    except Exception as e:
-        print(f"❌ 讀取驗證失敗：{e}")
-
-    print("=" * 40 + "\n")
-    print(f"🎉 {next_year} 年 {next_month} 月份資料已成功儲存並驗證完成！")
+    print(f"\n🎉 資料爬取完成，已儲存至 data.json (共 {len(all_data)} 筆資料)")
 
 
 if __name__ == "__main__":
-    scrape_next_month_data()
+    scrape_current_and_next_month_data()
