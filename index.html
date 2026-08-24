@@ -16,6 +16,8 @@
             --mtr-purple: #8b5cf6;
             --inbound-color: #34d399;
             --error-color: #f87171;
+            --warning-bg: rgba(245, 158, 11, 0.2);
+            --warning-border: rgba(245, 158, 11, 0.5);
         }
 
         * {
@@ -23,6 +25,7 @@
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -32,7 +35,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 20px;
+            padding: 16px;
         }
 
         .container {
@@ -88,6 +91,12 @@
         /* 天氣資訊卡片 */
         .weather-card {
             display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .weather-main {
+            display: flex;
             justify-content: space-between;
             align-items: center;
         }
@@ -114,6 +123,26 @@
             text-align: right;
             display: flex;
             flex-direction: column;
+            gap: 4px;
+        }
+
+        .weather-warnings {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 2px;
+        }
+
+        .warning-badge {
+            background-color: var(--warning-bg);
+            border: 1px solid var(--warning-border);
+            color: var(--highlight-color);
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
             gap: 4px;
         }
 
@@ -164,42 +193,60 @@
             font-weight: bold;
         }
 
-        /* 方向標題與切換按鈕 */
+        /* 方向標題與三站切換按鈕組 */
         .direction-label {
             font-size: 0.85rem;
             font-weight: 700;
             color: var(--accent-color);
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 6px;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .direction-label.inbound {
             color: var(--inbound-color);
         }
 
-        .toggle-btn {
-            background-color: rgba(56, 189, 248, 0.12);
-            color: var(--accent-color);
-            border: 1px solid rgba(56, 189, 248, 0.3);
-            padding: 4px 10px;
+        .station-btn-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-station {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-sub);
+            border: 1px solid var(--card-border);
+            padding: 6px 12px;
+            min-height: 36px;
             border-radius: 8px;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
             outline: none;
+            touch-action: manipulation;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .toggle-btn:hover {
-            background-color: rgba(56, 189, 248, 0.25);
-            border-color: rgba(56, 189, 248, 0.5);
+        .btn-station:active {
+            transform: scale(0.95);
         }
 
-        .toggle-btn:active {
-            transform: scale(0.96);
+        .btn-station:hover {
+            background-color: rgba(52, 211, 153, 0.15);
+            color: var(--inbound-color);
+        }
+
+        .btn-station.active {
+            background-color: rgba(52, 211, 153, 0.22);
+            color: var(--inbound-color);
+            border-color: var(--inbound-color);
+            box-shadow: 0 0 8px rgba(52, 211, 153, 0.3);
         }
 
         .train-section {
@@ -219,6 +266,28 @@
             font-weight: 700;
             color: var(--text-main);
             margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dest-badge {
+            font-size: 0.72rem;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .dest-badge.direct {
+            background-color: rgba(52, 211, 153, 0.25);
+            color: var(--inbound-color);
+            border: 1px solid rgba(52, 211, 153, 0.4);
+        }
+
+        .dest-badge.transfer {
+            background-color: rgba(245, 158, 11, 0.2);
+            color: var(--highlight-color);
+            border: 1px solid rgba(245, 158, 11, 0.4);
         }
 
         .train-plat {
@@ -333,16 +402,19 @@
             <div id="scripture-ref" class="scripture-ref"></div>
         </div>
 
-        <!-- 天氣資訊 -->
+        <!-- 天氣資訊 (含警告標籤) -->
         <div class="card weather-card">
-            <div class="weather-info">
-                <div id="weather-icon" class="weather-icon">🌤️</div>
-                <div id="temp" class="temp-display">--°C</div>
+            <div class="weather-main">
+                <div class="weather-info">
+                    <div id="weather-icon" class="weather-icon">🌤️</div>
+                    <div id="temp" class="temp-display">--°C</div>
+                </div>
+                <div class="weather-details">
+                    <div>將軍澳天氣</div>
+                    <div>相對濕度: <span id="humidity">--%</span></div>
+                </div>
             </div>
-            <div class="weather-details">
-                <div>將軍澳天氣</div>
-                <div>相對濕度: <span id="humidity">--%</span></div>
-            </div>
+            <div id="weather-warnings" class="weather-warnings"></div>
         </div>
 
         <!-- 卡片 1: 由康城站往調景嶺/市區 -->
@@ -386,7 +458,7 @@
             </div>
         </div>
 
-        <!-- 卡片 2: 由調景嶺/將軍澳往康城 (支援動態切換) -->
+        <!-- 卡片 2: 由調景嶺/將軍澳/北角往康城 -->
         <div class="card mtr-card">
             <div class="mtr-header">
                 <div class="station-title">
@@ -401,7 +473,11 @@
             <div class="train-section">
                 <div class="direction-label inbound">
                     <span id="card2-direction-label">🏁 由 調景嶺站 往 康城</span>
-                    <button id="toggle-c2-btn" class="toggle-btn" onclick="toggleCard2Station()">⇄ 切換至將軍澳站</button>
+                    <div class="station-btn-group">
+                        <button id="btn-tik" class="btn-station" onclick="selectCard2Station('TIK')">調景嶺</button>
+                        <button id="btn-tko" class="btn-station" onclick="selectCard2Station('TKO')">將軍澳</button>
+                        <button id="btn-nop" class="btn-station" onclick="selectCard2Station('NOP')">北角</button>
+                    </div>
                 </div>
                 <div class="train-list">
                     <div class="train-item first-train inbound-bg">
@@ -431,13 +507,31 @@
 
     <script>
         const dom = {};
-        let card2Station = 'TIK'; // 預設起點站: TIK (調景嶺), 可切換為 TKO (將軍澳)
+        
+        const STORAGE_KEY = 'mtr_card2_selected_station';
+        let card2Station = localStorage.getItem(STORAGE_KEY) || 'TIK';
+
+        const stationNames = {
+            'TIK': '調景嶺站',
+            'TKO': '將軍澳站',
+            'NOP': '北角站'
+        };
+
+        const destNames = { 
+            'NOP': '往 北角', 
+            'TIK': '往 調景嶺', 
+            'LHP': '往 康城', 
+            'TKO': '往 將軍澳',
+            'POA': '往 寶琳'
+        };
+
+        const matthewPassages = [ "1:21", "2:11", "3:17", "5:3-12", "6:9-13", "7:7-8", "11:28-30", "16:24", "28:18-20" ];
 
         function cacheDOM() {
             const ids = [
-                'scripture', 'scripture-ref', 'weather-icon', 'temp', 'humidity',
+                'scripture', 'scripture-ref', 'weather-icon', 'temp', 'humidity', 'weather-warnings',
                 'network-status-c1', 'updated-c1', 'network-status-c2', 'updated-c2',
-                'card2-station-title', 'card2-direction-label', 'toggle-c2-btn',
+                'card2-station-title', 'card2-direction-label',
                 'dest_c1_1', 'plat_c1_1', 'ttnt_c1_1', 'unit_c1_1', 'exact_c1_1',
                 'dest_c1_2', 'plat_c1_2', 'ttnt_c1_2', 'unit_c1_2', 'exact_c1_2',
                 'dest_c2_1', 'plat_c2_1', 'ttnt_c2_1', 'unit_c2_1', 'exact_c2_1',
@@ -453,23 +547,46 @@
         let isFirstC1Arriving = false;
         let isFirstC2Arriving = false;
         let timeOffset = 0; 
-        
-        const destNames = { 'NOP': '往 北角', 'TIK': '往 調景嶺', 'LHP': '往 康城', 'TKO': '往 將軍澳' };
-        const matthewPassages = [ "1:21", "2:11", "3:17", "5:3-12", "6:9-13", "7:7-8", "11:28-30", "16:24", "28:18-20" ];
 
-        function toggleCard2Station() {
-            if (card2Station === 'TIK') {
-                card2Station = 'TKO';
-                dom['card2-station-title'].innerText = '將軍澳站';
-                dom['card2-direction-label'].innerText = '🏁 由 將軍澳站 往 康城';
-                dom['toggle-c2-btn'].innerText = '⇄ 切換至調景嶺站';
-            } else {
-                card2Station = 'TIK';
-                dom['card2-station-title'].innerText = '調景嶺站';
-                dom['card2-direction-label'].innerText = '🏁 由 調景嶺站 往 康城';
-                dom['toggle-c2-btn'].innerText = '⇄ 切換至將軍澳站';
+        function selectCard2Station(sta, skipFetch = false) {
+            card2Station = sta;
+            localStorage.setItem(STORAGE_KEY, sta);
+
+            const staName = stationNames[sta] || '調景嶺站';
+
+            dom['card2-station-title'].innerText = staName;
+            dom['card2-direction-label'].innerText = sta === 'NOP' 
+                ? `🏁 由 北角站 往 康城 / 寶琳` 
+                : `🏁 由 ${staName} 往 康城`;
+
+            ['TIK', 'TKO', 'NOP'].forEach(code => {
+                const btn = document.getElementById(`btn-${code.toLowerCase()}`);
+                if (btn) {
+                    if (code === sta) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                }
+            });
+
+            if (!skipFetch) {
+                fetchMTRData();
             }
-            fetchMTRData();
+        }
+
+        function renderDestUI(trainObj) {
+            if (!trainObj) return '暫無列車';
+            const rawName = destNames[trainObj.dest] || `往 ${trainObj.dest}`;
+            
+            if (card2Station === 'NOP') {
+                if (trainObj.dest === 'LHP') {
+                    return `${rawName} <span class="dest-badge direct">直達</span>`;
+                } else if (trainObj.dest === 'POA') {
+                    return `${rawName} <span class="dest-badge transfer">轉乘</span>`;
+                }
+            }
+            return rawName;
         }
 
         function parseMTRTime(timeStr) {
@@ -508,17 +625,37 @@
 
         async function fetchHKOWeather() {
             try {
-                const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc');
-                const data = await res.json();
-                if (data) {
-                    const tkoTemp = data.temperature?.data.find(t => t.place.includes('將軍澳')) || data.temperature?.data[0];
+                const [rhrRes, warnRes] = await Promise.all([
+                    fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc').then(r => r.json()).catch(() => null),
+                    fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc').then(r => r.json()).catch(() => null)
+                ]);
+
+                if (rhrRes) {
+                    const tkoTemp = rhrRes.temperature?.data.find(t => t.place.includes('將軍澳')) || rhrRes.temperature?.data[0];
                     if (tkoTemp) dom['temp'].innerText = `${tkoTemp.value}°C`;
-                    if (data.humidity?.data?.[0]) dom['humidity'].innerText = `${data.humidity.data[0].value}%`;
+                    if (rhrRes.humidity?.data?.[0]) dom['humidity'].innerText = `${rhrRes.humidity.data[0].value}%`;
                     
                     const iconMap = { 50:"☀️", 51:"⛅", 53:"🌤️", 60:"☁️", 62:"🌧️", 65:"⛈️", 70:"🌙" };
-                    dom['weather-icon'].innerText = iconMap[data.icon?.[0]] || "🌤️";
+                    dom['weather-icon'].innerText = iconMap[rhrRes.icon?.[0]] || "🌤️";
                 }
-            } catch (error) { console.error('Weather Fetch Error'); }
+
+                const warnContainer = dom['weather-warnings'];
+                if (warnContainer) {
+                    warnContainer.innerHTML = '';
+                    if (warnRes && Object.keys(warnRes).length > 0) {
+                        Object.values(warnRes).forEach(w => {
+                            if (w && w.name) {
+                                const badge = document.createElement('span');
+                                badge.className = 'warning-badge';
+                                badge.innerHTML = `⚠️ ${w.name}`;
+                                warnContainer.appendChild(badge);
+                            }
+                        });
+                    }
+                }
+            } catch (error) { 
+                console.error('Weather Fetch Error:', error); 
+            }
         }
 
         function updateCountdownUI(targetTime, isArriving, ttntId, unitId, exactId) {
@@ -553,7 +690,7 @@
         }
 
         function setEmptyState(cardPrefix, index, msg) {
-            dom[`dest_${cardPrefix}_${index}`].innerText = msg;
+            dom[`dest_${cardPrefix}_${index}`].innerHTML = msg;
             dom[`plat_${cardPrefix}_${index}`].innerText = '-- 月台';
             dom[`ttnt_${cardPrefix}_${index}`].innerText = '--';
             dom[`unit_${cardPrefix}_${index}`].innerText = '';
@@ -586,8 +723,7 @@
                 // --- 1. 卡片一：由康城站往調景嶺/北角 (LHP DOWN) ---
                 const lhpDownTrains = resLHP?.data?.['TKL-LHP']?.DOWN;
                 if (resLHP?.status === 1 && lhpDownTrains && lhpDownTrains.length > 0) {
-                    // 車次 1
-                    dom['dest_c1_1'].innerText = destNames[lhpDownTrains[0].dest] || `往 ${lhpDownTrains[0].dest}`;
+                    dom['dest_c1_1'].innerHTML = destNames[lhpDownTrains[0].dest] || `往 ${lhpDownTrains[0].dest}`;
                     dom['plat_c1_1'].innerText = `${lhpDownTrains[0].plat} 月台`;
                     if (lhpDownTrains[0].ttnt === '0' || !lhpDownTrains[0].time) {
                         isFirstC1Arriving = true;
@@ -597,9 +733,8 @@
                         firstC1TargetTime = parseMTRTime(lhpDownTrains[0].time);
                     }
 
-                    // 車次 2
                     if (lhpDownTrains.length > 1) {
-                        dom['dest_c1_2'].innerText = destNames[lhpDownTrains[1].dest] || `往 ${lhpDownTrains[1].dest}`;
+                        dom['dest_c1_2'].innerHTML = destNames[lhpDownTrains[1].dest] || `往 ${lhpDownTrains[1].dest}`;
                         dom['plat_c1_2'].innerText = `${lhpDownTrains[1].plat} 月台`;
                         const t2Time = parseMTRTime(lhpDownTrains[1].time);
                         updateCountdownUI(t2Time, lhpDownTrains[1].ttnt === '0', 'ttnt_c1_2', 'unit_c1_2', 'exact_c1_2');
@@ -613,13 +748,18 @@
                     firstC1TargetTime = null;
                 }
 
-                // --- 2. 卡片二：由調景嶺/將軍澳往康城 (UP 綫過濾往康城列車) ---
+                // --- 2. 卡片二：方案 Z 邏輯 ---
                 const card2DataKey = `TKL-${card2Station}`;
-                const card2UpTrains = resCard2?.data?.[card2DataKey]?.UP?.filter(t => t.dest === 'LHP') || [];
+                let card2UpTrains = resCard2?.data?.[card2DataKey]?.UP || [];
                 
+                // 調景嶺/將軍澳只過濾康城車；北角站則顯示所有上行車（直達 + 轉乘）
+                if (card2Station !== 'NOP') {
+                    card2UpTrains = card2UpTrains.filter(t => t.dest === 'LHP');
+                }
+
                 if (resCard2?.status === 1 && card2UpTrains.length > 0) {
                     // 車次 1
-                    dom['dest_c2_1'].innerText = '往 康城';
+                    dom['dest_c2_1'].innerHTML = renderDestUI(card2UpTrains[0]);
                     dom['plat_c2_1'].innerText = `${card2UpTrains[0].plat} 月台`;
                     if (card2UpTrains[0].ttnt === '0' || !card2UpTrains[0].time) {
                         isFirstC2Arriving = true;
@@ -631,7 +771,7 @@
 
                     // 車次 2
                     if (card2UpTrains.length > 1) {
-                        dom['dest_c2_2'].innerText = '往 康城';
+                        dom['dest_c2_2'].innerHTML = renderDestUI(card2UpTrains[1]);
                         dom['plat_c2_2'].innerText = `${card2UpTrains[1].plat} 月台`;
                         const t2Time = parseMTRTime(card2UpTrains[1].time);
                         updateCountdownUI(t2Time, card2UpTrains[1].ttnt === '0', 'ttnt_c2_2', 'unit_c2_2', 'exact_c2_2');
@@ -639,7 +779,7 @@
                         setEmptyState('c2', 2, '暫無下班車');
                     }
                 } else {
-                    setEmptyState('c2', 1, '暫無列車往康城');
+                    setEmptyState('c2', 1, '暫無列車服務');
                     setEmptyState('c2', 2, '暫無下班車');
                     isFirstC2Arriving = false;
                     firstC2TargetTime = null;
@@ -658,13 +798,14 @@
 
         function initDashboard() {
             cacheDOM();
+            selectCard2Station(card2Station, true);
             fetchDailyMatthewGospel();
             fetchHKOWeather();
             fetchMTRData();
 
             setInterval(tickFirstTrainCountdown, 1000);
             setInterval(fetchMTRData, 25000);
-            setInterval(fetchHKOWeather, 600000);
+            setInterval(fetchHKOWeather, 300000);
         }
 
         document.addEventListener('DOMContentLoaded', initDashboard);
