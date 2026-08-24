@@ -65,11 +65,18 @@
             color: #a5b4fc;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: 600;
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        .scripture-reading {
+            font-size: 0.82rem;
+            color: #c7d2fe;
+            margin-bottom: 8px;
+            font-weight: 500;
         }
 
         .scripture-content {
@@ -395,9 +402,10 @@
         <!-- 每日天主聖言 -->
         <div class="card scripture-card">
             <div class="scripture-title">
-                <span>✝️ Daily Gospel</span>
-                <span style="font-size:0.7rem; opacity:0.8;">Saint Matthew</span>
+                <span id="scripture-title-text">✝️ Daily Gospel</span>
+                <span id="scripture-date" style="font-size:0.7rem; opacity:0.8;">Saint Matthew</span>
             </div>
+            <div id="scripture-reading" class="scripture-reading"></div>
             <div id="scripture" class="scripture-content">即時載入每日福音中...</div>
             <div id="scripture-ref" class="scripture-ref"></div>
         </div>
@@ -525,8 +533,6 @@
             'POA': '往 寶琳'
         };
 
-        const matthewPassages = [ "1:21", "2:11", "3:17", "5:3-12", "6:9-13", "7:7-8", "11:28-30", "16:24", "28:18-20" ];
-
         function cacheDOM() {
             const ids = [
                 'scripture', 'scripture-ref', 'weather-icon', 'temp', 'humidity', 'weather-warnings',
@@ -609,14 +615,19 @@
 
         async function loadDailyScriptureFromJSON() {
             try {
-                const res = await fetch('./data.json?t=' + Date.now()); // 防止瀏覽器快取
+                const res = await fetch('./data.json?t=' + Date.now());
                 const data = await res.json();
                 const today = data.today;
-        
-                document.getElementById('scripture-title-text').innerText = today.title;
-                document.getElementById('scripture-reading').innerText = today.reading;
-                document.getElementById('scripture').innerText = today.content;
-                document.getElementById('scripture-date').innerText = today.date;
+                
+                const titleEl = document.getElementById('scripture-title-text');
+                const readingEl = document.getElementById('scripture-reading');
+                const scriptureEl = document.getElementById('scripture');
+                const dateEl = document.getElementById('scripture-date');
+
+                if (titleEl && today.title) titleEl.innerText = today.title;
+                if (readingEl && today.reading) readingEl.innerText = today.reading;
+                if (scriptureEl && today.content) scriptureEl.innerText = today.content;
+                if (dateEl && today.date) dateEl.innerText = today.date;
             } catch (error) {
                 console.error('無法載入每日聖言 data.json:', error);
                 document.getElementById('scripture').innerText = '載入聖言失敗，請稍後再試。';
@@ -748,17 +759,15 @@
                     firstC1TargetTime = null;
                 }
 
-                // --- 2. 卡片二：方案 Z 邏輯 ---
+                // --- 2. 卡片二：調景嶺/將軍澳/北角上行 ---
                 const card2DataKey = `TKL-${card2Station}`;
                 let card2UpTrains = resCard2?.data?.[card2DataKey]?.UP || [];
                 
-                // 調景嶺/將軍澳只過濾康城車；北角站則顯示所有上行車（直達 + 轉乘）
                 if (card2Station !== 'NOP') {
                     card2UpTrains = card2UpTrains.filter(t => t.dest === 'LHP');
                 }
 
                 if (resCard2?.status === 1 && card2UpTrains.length > 0) {
-                    // 車次 1
                     dom['dest_c2_1'].innerHTML = renderDestUI(card2UpTrains[0]);
                     dom['plat_c2_1'].innerText = `${card2UpTrains[0].plat} 月台`;
                     if (card2UpTrains[0].ttnt === '0' || !card2UpTrains[0].time) {
@@ -769,7 +778,6 @@
                         firstC2TargetTime = parseMTRTime(card2UpTrains[0].time);
                     }
 
-                    // 車次 2
                     if (card2UpTrains.length > 1) {
                         dom['dest_c2_2'].innerHTML = renderDestUI(card2UpTrains[1]);
                         dom['plat_c2_2'].innerText = `${card2UpTrains[1].plat} 月台`;
@@ -799,7 +807,7 @@
         function initDashboard() {
             cacheDOM();
             selectCard2Station(card2Station, true);
-            fetchDailyMatthewGospel();
+            loadDailyScriptureFromJSON();
             fetchHKOWeather();
             fetchMTRData();
 
