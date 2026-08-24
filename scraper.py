@@ -1,3 +1,4 @@
+import calendar
 import json
 import re
 import time
@@ -52,7 +53,13 @@ def parse_meditation_page(html_text):
     return title, reading, content
 
 
-def scrape_year_data(year=2026):
+def scrape_month_data(year=None, month=None):
+    today = date.today()
+    if year is None:
+        year = today.year
+    if month is None:
+        month = today.month
+
     base_url = "https://www.dailyscripture.net/daily-meditation/"
     headers = {
         "User-Agent": (
@@ -66,12 +73,14 @@ def scrape_year_data(year=2026):
     except FileNotFoundError:
         all_data = {}
 
-    start_date = date(year, 1, 1)
-    end_date = date(year, 12, 31)
+    # 計算該月份的第一天與最後一天
+    start_date = date(year, month, 1)
+    last_day = calendar.monthrange(year, month)[1]
+    end_date = date(year, month, last_day)
     delta = timedelta(days=1)
 
     curr = start_date
-    print(f"🚀 開始爬取 {year} 年度聖言資料...")
+    print(f"🚀 開始爬取 {year} 年 {month} 月份聖言資料 ({start_date} 至 {end_date})...")
 
     session = requests.Session()
 
@@ -106,9 +115,11 @@ def scrape_year_data(year=2026):
     with open("data.json", "w", encoding="utf-8") as f:
         json.dump(all_data, f, ensure_ascii=False, indent=2)
 
-    print("🎉 資料已成功儲存至 data.json！")
+    print(f"🎉 {year} 年 {month} 月份資料已成功儲存至 data.json！")
 
 
 if __name__ == "__main__":
-    current_year = datetime.now().year
-    scrape_year_data(current_year)
+    now = datetime.now()
+    
+    # 預設：執行時自動抓取「當月」整個月的資料
+    scrape_month_data(now.year, now.month)
