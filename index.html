@@ -84,6 +84,34 @@
             line-height: 1.6;
             color: #e0e7ff;
             font-weight: 400;
+            white-space: pre-line;
+        }
+
+        /* 聖言預設摺疊 (最多顯示 2 行) */
+        .scripture-content.collapsed {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* 展開 / 收起按鈕 */
+        .scripture-toggle-btn {
+            display: inline-block;
+            margin-top: 8px;
+            font-size: 0.78rem;
+            color: #a5b4fc;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s ease;
+        }
+
+        .scripture-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
         }
 
         .scripture-ref {
@@ -406,8 +434,16 @@
                 <span id="scripture-date" style="font-size:0.7rem; opacity:0.8;">Saint Matthew</span>
             </div>
             <div id="scripture-reading" class="scripture-reading"></div>
-            <div id="scripture" class="scripture-content">即時載入每日福音中...</div>
+            
+            <!-- 預設加入 collapsed class 限高 2 行 -->
+            <div id="scripture" class="scripture-content collapsed">即時載入每日福音中...</div>
+            
             <div id="scripture-ref" class="scripture-ref"></div>
+
+            <!-- 展開 / 收起按鈕 -->
+            <div id="scripture-toggle-btn" class="scripture-toggle-btn" style="display: none;" onclick="toggleScripture()">
+                展開全文 🔽
+            </div>
         </div>
 
         <!-- 天氣資訊 (含警告標籤) -->
@@ -533,11 +569,14 @@
             'POA': '往 寶琳'
         };
 
+        let isScriptureExpanded = false;
+
         function cacheDOM() {
             const ids = [
-                'scripture', 'scripture-ref', 'weather-icon', 'temp', 'humidity', 'weather-warnings',
-                'network-status-c1', 'updated-c1', 'network-status-c2', 'updated-c2',
-                'card2-station-title', 'card2-direction-label',
+                'scripture-title-text', 'scripture-date', 'scripture-reading', 'scripture', 
+                'scripture-ref', 'scripture-toggle-btn', 'weather-icon', 'temp', 'humidity', 
+                'weather-warnings', 'network-status-c1', 'updated-c1', 'network-status-c2', 
+                'updated-c2', 'card2-station-title', 'card2-direction-label',
                 'dest_c1_1', 'plat_c1_1', 'ttnt_c1_1', 'unit_c1_1', 'exact_c1_1',
                 'dest_c1_2', 'plat_c1_2', 'ttnt_c1_2', 'unit_c1_2', 'exact_c1_2',
                 'dest_c2_1', 'plat_c2_1', 'ttnt_c2_1', 'unit_c2_1', 'exact_c2_1',
@@ -553,6 +592,21 @@
         let isFirstC1Arriving = false;
         let isFirstC2Arriving = false;
         let timeOffset = 0; 
+
+        function toggleScripture() {
+            const scriptureEl = dom['scripture'];
+            const toggleBtn = dom['scripture-toggle-btn'];
+            
+            isScriptureExpanded = !isScriptureExpanded;
+
+            if (isScriptureExpanded) {
+                scriptureEl.classList.remove('collapsed');
+                toggleBtn.innerText = '收起內容 🔼';
+            } else {
+                scriptureEl.classList.add('collapsed');
+                toggleBtn.innerText = '展開全文 🔽';
+            }
+        }
 
         function selectCard2Station(sta, skipFetch = false) {
             card2Station = sta;
@@ -619,18 +673,27 @@
                 const data = await res.json();
                 const today = data.today;
                 
-                const titleEl = document.getElementById('scripture-title-text');
-                const readingEl = document.getElementById('scripture-reading');
-                const scriptureEl = document.getElementById('scripture');
-                const dateEl = document.getElementById('scripture-date');
+                const titleEl = dom['scripture-title-text'];
+                const readingEl = dom['scripture-reading'];
+                const scriptureEl = dom['scripture'];
+                const dateEl = dom['scripture-date'];
+                const toggleBtn = dom['scripture-toggle-btn'];
 
                 if (titleEl && today.title) titleEl.innerText = today.title;
                 if (readingEl && today.reading) readingEl.innerText = today.reading;
                 if (scriptureEl && today.content) scriptureEl.innerText = today.content;
                 if (dateEl && today.date) dateEl.innerText = today.date;
+
+                // 內文超過 80 字才顯示展開按鈕，否則自動全開並隱藏按鈕
+                if (today.content && today.content.length > 80) {
+                    if (toggleBtn) toggleBtn.style.display = 'inline-block';
+                } else {
+                    if (scriptureEl) scriptureEl.classList.remove('collapsed');
+                    if (toggleBtn) toggleBtn.style.display = 'none';
+                }
             } catch (error) {
                 console.error('無法載入每日聖言 data.json:', error);
-                document.getElementById('scripture').innerText = '載入聖言失敗，請稍後再試。';
+                if (dom['scripture']) dom['scripture'].innerText = '載入聖言失敗，請稍後再試。';
             }
         }
 
