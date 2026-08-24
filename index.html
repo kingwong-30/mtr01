@@ -60,34 +60,41 @@
             border-color: #4338ca;
         }
 
-        .scripture-title {
-            font-size: 0.8rem;
-            color: #a5b4fc;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 6px;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .scripture-main-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 4px;
+            line-height: 1.3;
         }
 
-        .scripture-reading {
-            font-size: 0.82rem;
-            color: #c7d2fe;
-            margin-bottom: 8px;
+        .scripture-date {
+            font-size: 0.78rem;
+            color: #a5b4fc;
+            margin-bottom: 10px;
             font-weight: 500;
         }
 
+        .scripture-reading {
+            font-size: 0.88rem;
+            color: #c7d2fe;
+            margin-bottom: 8px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
         .scripture-content {
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             line-height: 1.6;
             color: #e0e7ff;
             font-weight: 400;
             white-space: pre-line;
         }
 
-        /* 聖言預設摺疊 (最多顯示 2 行) */
+        /* 預設摺疊 (最多顯示 2 行) */
         .scripture-content.collapsed {
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -98,7 +105,7 @@
         /* 展開 / 收起按鈕 */
         .scripture-toggle-btn {
             display: inline-block;
-            margin-top: 8px;
+            margin-top: 10px;
             font-size: 0.78rem;
             color: #a5b4fc;
             background: rgba(255, 255, 255, 0.1);
@@ -112,15 +119,6 @@
         .scripture-toggle-btn:hover {
             background: rgba(255, 255, 255, 0.2);
             color: #ffffff;
-        }
-
-        .scripture-ref {
-            font-size: 0.8rem;
-            color: #818cf8;
-            margin-top: 8px;
-            text-align: right;
-            font-style: italic;
-            font-weight: 600;
         }
 
         /* 天氣資訊卡片 */
@@ -228,7 +226,6 @@
             font-weight: bold;
         }
 
-        /* 方向標題與三站切換按鈕組 */
         .direction-label {
             font-size: 0.85rem;
             font-weight: 700;
@@ -427,26 +424,24 @@
 <body>
 
     <div class="container">
-        <!-- 每日天主聖言 -->
+        <!-- 每日天主聖言卡片 -->
         <div class="card scripture-card">
-            <div class="scripture-title">
-                <span id="scripture-title-text">✝️ Daily Gospel</span>
-                <span id="scripture-date" style="font-size:0.7rem; opacity:0.8;">Saint Matthew</span>
-            </div>
-            <div id="scripture-reading" class="scripture-reading"></div>
+            <!-- 1. 主標題 -->
+            <div id="scripture-title-text" class="scripture-main-title">載入聖言中...</div>
+            <!-- 2. 日期 -->
+            <div id="scripture-date" class="scripture-date">--</div>
+            <!-- 3. 讀經章節 -->
+            <div id="scripture-reading" class="scripture-reading">--</div>
+            <!-- 4. 內文 -->
+            <div id="scripture" class="scripture-content collapsed"></div>
             
-            <!-- 預設加入 collapsed class 限高 2 行 -->
-            <div id="scripture" class="scripture-content collapsed">即時載入每日福音中...</div>
-            
-            <div id="scripture-ref" class="scripture-ref"></div>
-
             <!-- 展開 / 收起按鈕 -->
             <div id="scripture-toggle-btn" class="scripture-toggle-btn" style="display: none;" onclick="toggleScripture()">
                 展開全文 🔽
             </div>
         </div>
 
-        <!-- 天氣資訊 (含警告標籤) -->
+        <!-- 天氣資訊 -->
         <div class="card weather-card">
             <div class="weather-main">
                 <div class="weather-info">
@@ -551,30 +546,23 @@
 
     <script>
         const dom = {};
-        
         const STORAGE_KEY = 'mtr_card2_selected_station';
         let card2Station = localStorage.getItem(STORAGE_KEY) || 'TIK';
 
-        const stationNames = {
-            'TIK': '調景嶺站',
-            'TKO': '將軍澳站',
-            'NOP': '北角站'
-        };
-
-        const destNames = { 
-            'NOP': '往 北角', 
-            'TIK': '往 調景嶺', 
-            'LHP': '往 康城', 
-            'TKO': '往 將軍澳',
-            'POA': '往 寶琳'
-        };
+        const stationNames = { 'TIK': '調景嶺站', 'TKO': '將軍澳站', 'NOP': '北角站' };
+        const destNames = { 'NOP': '往 北角', 'TIK': '往 調景嶺', 'LHP': '往 康城', 'TKO': '往 將軍澳', 'POA': '往 寶琳' };
 
         let isScriptureExpanded = false;
+        let firstC1TargetTime = null;
+        let firstC2TargetTime = null;
+        let isFirstC1Arriving = false;
+        let isFirstC2Arriving = false;
+        let timeOffset = 0;
 
         function cacheDOM() {
             const ids = [
                 'scripture-title-text', 'scripture-date', 'scripture-reading', 'scripture', 
-                'scripture-ref', 'scripture-toggle-btn', 'weather-icon', 'temp', 'humidity', 
+                'scripture-toggle-btn', 'weather-icon', 'temp', 'humidity', 
                 'weather-warnings', 'network-status-c1', 'updated-c1', 'network-status-c2', 
                 'updated-c2', 'card2-station-title', 'card2-direction-label',
                 'dest_c1_1', 'plat_c1_1', 'ttnt_c1_1', 'unit_c1_1', 'exact_c1_1',
@@ -582,16 +570,53 @@
                 'dest_c2_1', 'plat_c2_1', 'ttnt_c2_1', 'unit_c2_1', 'exact_c2_1',
                 'dest_c2_2', 'plat_c2_2', 'ttnt_c2_2', 'unit_c2_2', 'exact_c2_2'
             ];
-            ids.forEach(id => {
-                dom[id] = document.getElementById(id);
-            });
+            ids.forEach(id => { dom[id] = document.getElementById(id); });
         }
 
-        let firstC1TargetTime = null;
-        let firstC2TargetTime = null;
-        let isFirstC1Arriving = false;
-        let isFirstC2Arriving = false;
-        let timeOffset = 0; 
+        // 取得香港當前的 YYYY-MM-DD 日期 Key
+        function getHongKongDateKey() {
+            const options = { timeZone: 'Asia/Hong_Kong', year: 'numeric', month: '2-digit', day: '2-digit' };
+            const formatter = new Intl.DateTimeFormat('en-CA', options);
+            return formatter.format(new Date());
+        }
+
+        // 從 data.json 載入今日聖言
+        async function loadDailyScriptureFromJSON() {
+            try {
+                const res = await fetch('./data.json?t=' + Date.now());
+                const allData = await res.json();
+                
+                const todayKey = getHongKongDateKey(); // 例: "2026-08-24"
+                const today = allData[todayKey];
+                
+                const titleEl = dom['scripture-title-text'];
+                const dateEl = dom['scripture-date'];
+                const readingEl = dom['scripture-reading'];
+                const scriptureEl = dom['scripture'];
+                const toggleBtn = dom['scripture-toggle-btn'];
+
+                if (today) {
+                    if (titleEl) titleEl.innerText = today.title || "Daily Gospel";
+                    if (dateEl) dateEl.innerText = today.date || "";
+                    if (readingEl) readingEl.innerText = today.reading || "";
+                    if (scriptureEl) scriptureEl.innerText = today.content || "";
+
+                    if (today.content && today.content.length > 80) {
+                        if (toggleBtn) toggleBtn.style.display = 'inline-block';
+                    } else {
+                        if (scriptureEl) scriptureEl.classList.remove('collapsed');
+                        if (toggleBtn) toggleBtn.style.display = 'none';
+                    }
+                } else {
+                    if (titleEl) titleEl.innerText = "Daily Gospel";
+                    if (scriptureEl) scriptureEl.innerText = "未有找到今日之聖言內容。";
+                    if (toggleBtn) toggleBtn.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('無法載入每日聖言 data.json:', error);
+                if (dom['scripture']) dom['scripture'].innerText = '載入聖言失敗，請稍後再試。';
+            }
+        }
 
         function toggleScripture() {
             const scriptureEl = dom['scripture'];
@@ -630,9 +655,7 @@
                 }
             });
 
-            if (!skipFetch) {
-                fetchMTRData();
-            }
+            if (!skipFetch) fetchMTRData();
         }
 
         function renderDestUI(trainObj) {
@@ -665,36 +688,6 @@
         function getFormattedCurrentTime() {
             const now = new Date();
             return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        }
-
-        async function loadDailyScriptureFromJSON() {
-            try {
-                const res = await fetch('./data.json?t=' + Date.now());
-                const data = await res.json();
-                const today = data.today;
-                
-                const titleEl = dom['scripture-title-text'];
-                const readingEl = dom['scripture-reading'];
-                const scriptureEl = dom['scripture'];
-                const dateEl = dom['scripture-date'];
-                const toggleBtn = dom['scripture-toggle-btn'];
-
-                if (titleEl && today.title) titleEl.innerText = today.title;
-                if (readingEl && today.reading) readingEl.innerText = today.reading;
-                if (scriptureEl && today.content) scriptureEl.innerText = today.content;
-                if (dateEl && today.date) dateEl.innerText = today.date;
-
-                // 內文超過 80 字才顯示展開按鈕，否則自動全開並隱藏按鈕
-                if (today.content && today.content.length > 80) {
-                    if (toggleBtn) toggleBtn.style.display = 'inline-block';
-                } else {
-                    if (scriptureEl) scriptureEl.classList.remove('collapsed');
-                    if (toggleBtn) toggleBtn.style.display = 'none';
-                }
-            } catch (error) {
-                console.error('無法載入每日聖言 data.json:', error);
-                if (dom['scripture']) dom['scripture'].innerText = '載入聖言失敗，請稍後再試。';
-            }
         }
 
         async function fetchHKOWeather() {
@@ -794,7 +787,7 @@
                 dom['updated-c1'].innerText = updateTimeString;
                 dom['updated-c2'].innerText = updateTimeString;
 
-                // --- 1. 卡片一：由康城站往調景嶺/北角 (LHP DOWN) ---
+                // --- 1. 卡片一：由康城站往調景嶺/北角 ---
                 const lhpDownTrains = resLHP?.data?.['TKL-LHP']?.DOWN;
                 if (resLHP?.status === 1 && lhpDownTrains && lhpDownTrains.length > 0) {
                     dom['dest_c1_1'].innerHTML = destNames[lhpDownTrains[0].dest] || `往 ${lhpDownTrains[0].dest}`;
