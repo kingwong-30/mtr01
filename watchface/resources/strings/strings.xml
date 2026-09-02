@@ -1,0 +1,20 @@
+<strings>
+    <string id="AppName">Klar</string>
+
+    <string id="FrameStyleTitle">Frame style</string>
+    <string id="FrameThin">Thin ring</string>
+    <string id="FrameDouble">Double ring</string>
+    <string id="FrameTicks">Hour ticks</string>
+
+    <string id="FrameColorTitle">Frame color</string>
+    <string id="ColorGraphite">Graphite</string>
+    <string id="ColorGold">Gold</string>
+    <string id="ColorSilver">Silver</string>
+    <string id="ColorTeal">Teal</string>
+    <string id="ColorCoral">Coral</string>
+    <string id="ColorIndigo">Indigo</string>
+
+    <string id="LabelHr">HR</string>
+    <string id="LabelSteps">STEPS</string>
+    <string id="LabelBattery">BAT</string>
+</strings>

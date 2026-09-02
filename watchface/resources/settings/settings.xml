@@ -1,0 +1,20 @@
+<settings>
+    <setting propertyKey="@Properties.FrameStyle" title="@Strings.FrameStyleTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.FrameThin</listEntry>
+            <listEntry value="1">@Strings.FrameDouble</listEntry>
+            <listEntry value="2">@Strings.FrameTicks</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.FrameColor" title="@Strings.FrameColorTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.ColorGraphite</listEntry>
+            <listEntry value="1">@Strings.ColorGold</listEntry>
+            <listEntry value="2">@Strings.ColorSilver</listEntry>
+            <listEntry value="3">@Strings.ColorTeal</listEntry>
+            <listEntry value="4">@Strings.ColorCoral</listEntry>
+            <listEntry value="5">@Strings.ColorIndigo</listEntry>
+        </settingConfig>
+    </setting>
+</settings>

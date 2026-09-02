@@ -1,0 +1,20 @@
+<strings>
+    <string id="AppName">Klar</string>
+
+    <string id="FrameStyleTitle">邊框樣式</string>
+    <string id="FrameThin">細環</string>
+    <string id="FrameDouble">雙環</string>
+    <string id="FrameTicks">時刻刻度</string>
+
+    <string id="FrameColorTitle">邊框顏色</string>
+    <string id="ColorGraphite">石墨</string>
+    <string id="ColorGold">金</string>
+    <string id="ColorSilver">銀</string>
+    <string id="ColorTeal">青綠</string>
+    <string id="ColorCoral">珊瑚</string>
+    <string id="ColorIndigo">靛藍</string>
+
+    <string id="LabelHr">心率</string>
+    <string id="LabelSteps">步數</string>
+    <string id="LabelBattery">電量</string>
+</strings>

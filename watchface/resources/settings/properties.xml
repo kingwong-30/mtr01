@@ -1,0 +1,4 @@
+<properties>
+    <property id="FrameStyle" type="number">0</property>
+    <property id="FrameColor" type="number">3</property>
+</properties>
